@@ -4,567 +4,693 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arbor Genealogica · I Giustiniani</title>
-<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Cinzel:wght@400;600&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cinzel:wght@400;600&family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --paper:#e9dcbb;
-    --paper-d:#ddcca3;
-    --ink:#3a2a16;
-    --ink-soft:#5c4324;
-    --sepia:#6e4f24;
-    --gold:#9a7634;
-    --foliage:#6f7a45;
-  }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:#cdb886;font-family:'IM Fell English',serif;color:var(--ink);overflow:hidden;}
+  body{background:#c4ad7c;overflow:hidden;font-family:'IM Fell English',serif;}
 
-  .topbar{
-    position:fixed;top:0;left:0;right:0;z-index:20;
-    display:flex;align-items:center;justify-content:center;gap:10px;
-    padding:8px 14px;flex-wrap:wrap;
-    background:linear-gradient(180deg,rgba(58,42,22,.92),rgba(58,42,22,.78));
-    border-bottom:1px solid var(--gold);
+  /* ── Password gate ── */
+  #gate{
+    position:fixed;inset:0;z-index:9999;
+    background:radial-gradient(ellipse at 50% 45%,#ece0c0 0%,#e2d2a5 55%,#cdb678 100%);
+    display:flex;align-items:center;justify-content:center;
+    transition:opacity .35s;
   }
-  .topbar .ttl{font-family:'Cinzel Decorative',serif;color:#e9dcbb;font-size:15px;letter-spacing:.12em;margin-right:14px;}
-  .btn{
-    background:none;border:1px solid #9a7634;color:#d8c79b;
-    font-family:'IM Fell English',serif;font-size:13px;
-    padding:4px 12px;cursor:pointer;border-radius:2px;transition:all .2s;letter-spacing:.03em;
+  #gate-box{
+    border:1px solid #9a7634;padding:44px 52px;text-align:center;
+    max-width:360px;width:90%;background:rgba(245,238,218,.9);
+    box-shadow:0 8px 40px rgba(0,0,0,.18);
   }
-  .btn:hover{background:#9a7634;color:#2a1d0e;}
-  .btn.on{background:#e9dcbb;color:#3a2a16;border-color:#e9dcbb;}
-  .zl{color:#cab487;font-size:12px;min-width:42px;text-align:center;}
+  #gate-box h2{font-family:'Cinzel Decorative',serif;font-size:22px;color:#2a1d0e;
+    margin-bottom:6px;letter-spacing:.06em;}
+  #gate-box p{font-style:italic;color:#6e4f24;font-size:14px;margin-bottom:28px;}
+  #gpwd{
+    width:100%;padding:11px 14px;border:1px solid #9a7634;
+    background:#f5edd8;font-family:'IM Fell English',serif;font-size:15px;
+    color:#2a1d0e;margin-bottom:12px;border-radius:2px;
+    outline:none;transition:border-color .2s;
+  }
+  #gpwd:focus{border-color:#6a4a10;}
+  #gate-btn{
+    width:100%;padding:11px;background:#2a1d0e;color:#e9dcbb;border:none;
+    font-family:'Cinzel',serif;font-size:13px;cursor:pointer;
+    letter-spacing:.1em;border-radius:2px;transition:background .2s;
+  }
+  #gate-btn:hover{background:#4a3018;}
+  #gerr{color:#8b2020;font-size:12px;margin-top:10px;display:none;
+    font-style:italic;}
+  #gate-rule{border:none;border-top:1px solid rgba(154,118,52,.4);margin:28px 0 0;}
 
-  #stage{position:fixed;inset:0;top:0;overflow:hidden;cursor:grab;background:
-     radial-gradient(ellipse at 50% 38%, #ece0c2 0%, #e3d4ad 45%, #d3bf91 100%);}
+  /* ── App ── */
+  #stage{
+    position:fixed;inset:0;cursor:grab;overflow:hidden;
+    background:radial-gradient(ellipse at 50% 42%,#ece0c0 0%,#e2d2a5 52%,#cdb678 100%);
+  }
   #stage:active{cursor:grabbing;}
   #art{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform;}
 
-  #tip{
-    position:fixed;pointer-events:none;display:none;z-index:50;
-    background:#2f2110;color:#e9dcbb;border:1px solid #9a7634;
-    font-family:'IM Fell English',serif;font-size:13px;line-height:1.5;
-    padding:7px 12px;border-radius:2px;max-width:240px;
+  #topbar{
+    position:fixed;top:0;left:0;right:0;z-index:50;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:7px 14px;flex-wrap:wrap;
+    background:rgba(42,28,12,.92);border-bottom:1px solid #9a7634;
   }
-  .hint{
-    position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
-    z-index:20;font-family:'IM Fell English',serif;font-style:italic;
-    font-size:12px;color:#5c4324;background:rgba(233,220,187,.7);
-    padding:4px 14px;border-radius:12px;border:1px solid rgba(154,118,52,.4);
+  .ttl{font-family:'Cinzel Decorative',serif;color:#e9dcbb;font-size:14px;
+    letter-spacing:.1em;margin-right:10px;}
+  .btn{background:none;border:1px solid #7a5c28;color:#cdb880;
+    font-family:'IM Fell English',serif;font-size:13px;
+    padding:4px 12px;cursor:pointer;border-radius:2px;transition:all .18s;}
+  .btn:hover{background:#9a7634;color:#2a1d0e;border-color:#9a7634;}
+  .btn.on{background:#e9dcbb;color:#2a1d0e;border-color:#e9dcbb;}
+  .zl{color:#b09060;font-size:12px;min-width:44px;text-align:center;font-family:monospace;}
+
+  #panel{
+    position:fixed;bottom:20px;right:16px;z-index:50;
+    background:rgba(245,238,218,.97);border:1px solid #9a7634;border-radius:2px;
+    min-width:228px;box-shadow:0 4px 24px rgba(0,0,0,.22);
   }
+  #ph{
+    background:linear-gradient(90deg,#2a1d0e,#3c2a18);
+    padding:9px 14px;display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;border-radius:2px 2px 0 0;user-select:none;
+  }
+  #ph span{color:#e2d4aa;font-family:'Cinzel',serif;font-size:11px;letter-spacing:.18em;}
+  #ph .arr{color:#9a7634;font-size:14px;transition:transform .2s;}
+  #pb{padding:10px 14px 12px;}
+  #panel.col #pb{display:none;}
+  #panel.col #ph .arr{transform:rotate(-90deg);}
+  .br{display:flex;align-items:center;gap:8px;padding:5px 0;
+    border-bottom:1px solid rgba(154,118,52,.15);}
+  .br:last-of-type{border-bottom:none;}
+  .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .bname{font-size:12px;color:#3a2a16;flex:1;white-space:nowrap;
+    cursor:pointer;user-select:none;transition:color .15s;}
+  .bname:hover{color:#8a4010;}
+  input[type=range]{
+    width:78px;height:3px;cursor:pointer;accent-color:#7a5020;
+    -webkit-appearance:none;appearance:none;background:#c4a060;border-radius:2px;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:10px;height:10px;
+    border-radius:50%;background:#7a5020;cursor:pointer;
+  }
+  .pacts{display:flex;gap:7px;margin-top:10px;}
+  .pbtn{flex:1;background:none;border:1px solid #9a7634;color:#6e4f24;
+    font-family:'IM Fell English',serif;font-size:12px;
+    padding:4px 6px;cursor:pointer;border-radius:2px;transition:background .15s;}
+  .pbtn:hover{background:#9a7634;color:#fff;}
+
+  #tip{position:fixed;pointer-events:none;display:none;z-index:200;
+    background:#2a1d0e;color:#e9dcbb;border:1px solid #9a7634;
+    font-size:13px;padding:7px 12px;border-radius:2px;max-width:220px;
+    line-height:1.5;font-family:'IM Fell English',serif;}
+  .hint{position:fixed;bottom:10px;left:50%;transform:translateX(-50%);
+    font-style:italic;font-size:11px;color:#5a4020;pointer-events:none;z-index:40;
+    background:rgba(233,220,180,.72);padding:3px 12px;border-radius:10px;
+    font-family:'IM Fell English',serif;}
 </style>
 </head>
 <body>
 
-  <div id="gate" style="position:fixed;inset:0;z-index:9999;background:#e9dcbb;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  font-family:'IM Fell English',serif;">
-  <div style="border:1px solid #9a7634;padding:40px 48px;text-align:center;max-width:340px;">
-    <div style="font-family:'Cinzel',serif;font-size:22px;color:#3a2a16;margin-bottom:8px;">
-      I Giustiniani
-    </div>
-    <div style="font-style:italic;color:#6e4f24;font-size:14px;margin-bottom:24px;">
-      Accesso riservato alla famiglia
-    </div>
-    <input id="pwd" type="password" placeholder="Password"
-      style="width:100%;padding:10px;border:1px solid #9a7634;background:#f5edd8;
-      font-family:'IM Fell English',serif;font-size:15px;color:#3a2a16;margin-bottom:12px;">
-    <button onclick="checkPwd()"
-      style="width:100%;padding:10px;background:#3a2a16;color:#e9dcbb;
-      border:none;font-family:'Cinzel',serif;font-size:14px;cursor:pointer;letter-spacing:.08em;">
-      Entra
-    </button>
-    <div id="err" style="color:#8b2020;font-size:12px;margin-top:10px;display:none;">
-      Password errata
-    </div>
+<!-- PASSWORD GATE -->
+<div id="gate">
+  <div id="gate-box">
+    <h2>I Giustiniani</h2>
+    <p>Albero genealogico familiare — accesso riservato</p>
+    <input id="gpwd" type="password" placeholder="Password" autocomplete="current-password">
+    <button id="gate-btn" onclick="checkPwd()">Entra</button>
+    <div id="gerr">Password non corretta. Riprova.</div>
+    <hr id="gate-rule">
   </div>
 </div>
 
-<script>
-  const PWD = 'giustiniani1889';   // ← cambia qui
-  if(sessionStorage.getItem('auth')==='ok') document.getElementById('gate').remove();
-  function checkPwd(){
-    if(document.getElementById('pwd').value===PWD){
-      sessionStorage.setItem('auth','ok');
-      document.getElementById('gate').remove();
-    } else {
-      document.getElementById('err').style.display='block';
-    }
-  }
-  document.getElementById('pwd').addEventListener('keydown',e=>{ if(e.key==='Enter') checkPwd(); });
-</script>
-
-<div class="topbar">
+<!-- APP -->
+<div id="topbar">
   <span class="ttl">I Giustiniani</span>
-  <button class="btn" onclick="zoomIn()">＋</button>
-  <button class="btn" onclick="zoomOut()">－</button>
+  <button class="btn" onclick="zIn()">＋</button>
+  <button class="btn" onclick="zOut()">－</button>
   <span class="zl" id="zl">100%</span>
   <button class="btn" onclick="fit()">⊡ Tutto</button>
   <button class="btn on" id="bn" onclick="toggleNames()">Nomi</button>
-  <button class="btn" id="bt" onclick="toggleTint()">Tinta</button>
 </div>
 
 <div id="stage"><svg id="art" xmlns="http://www.w3.org/2000/svg"></svg></div>
+
+<div id="panel">
+  <div id="ph" onclick="document.getElementById('panel').classList.toggle('col')">
+    <span>RAMI PRINCIPALI</span><span class="arr">▾</span>
+  </div>
+  <div id="pb"></div>
+</div>
+
 <div id="tip"></div>
-<div class="hint">Trascina per spostarti · rotella o pizzico per ingrandire</div>
+<div class="hint">Trascina · rotella per ingrandire · clicca il nome del ramo per isolarlo</div>
 
 <script>
-// ───────────────────────── DATA (nodi = discendenti) ─────────────────────────
-const ROOT = {
- id:"0", name:"Girolamo Giustiniani", year:"1889–1979", spouse:"Giulia Pandolfini · 1899–2000", gen:0, children:[
-  {id:"1", name:"Sebastiano", sub:"(Nello)", year:"1922–1998", spouse:"Maria Adelaide (Tussi)", gen:1, children:[
-    {id:"1.1", name:"Paolo", year:"1951", spouse:"Stefania", gen:2, children:[
-      {id:"1.1.1", name:"Jacopo", year:"1980", spouse:"Alice", gen:3, children:[
-        {id:"1.1.1.1", name:"Sebastiano", year:"2015", gen:4},
-        {id:"1.1.1.2", name:"Clementina", year:"2017", gen:4}]},
-      {id:"1.1.2", name:"Matteo", year:"1984", spouse:"Asimenia", gen:3, children:[
-        {id:"1.1.2.1", name:"Lea", year:"2018", gen:4}]}]},
-    {id:"1.2", name:"Giulio", year:"1952", spouse:"⚭ Bobo (Elisabetta); ⚭ Elisabetta", gen:2, children:[
-      {id:"1.2.1", name:"Giovanni", year:"1978", spouse:"Naho", gen:3, children:[
-        {id:"1.2.1.1", name:"Eita Giulio", year:"2014", gen:4},
-        {id:"1.2.1.2", name:"Luigi Kento", year:"2017", gen:4}]},
-      {id:"1.2.2", name:"Niccolò", year:"1979", spouse:"Camilla", gen:3, children:[
-        {id:"1.2.2.1", name:"Cosimo", year:"2016", gen:4},
-        {id:"1.2.2.2", name:"Alvise", year:"2021", gen:4}]},
-      {id:"1.2.3", name:"Caterina", year:"2001", gen:3},
-      {id:"1.2.4", name:"Costanza", year:"2006", gen:3},
-      {id:"1.2.5", name:"Beatrice", year:"2006", gen:3}]},
-    {id:"1.3", name:"Antonella", year:"1958", spouse:"⚭ Luca Bojola; ⚭ Berto Nativi", gen:2, children:[
-      {id:"1.3.1", name:"Madalena", year:"1979", spouse:"A. Paganini", gen:3, children:[
-        {id:"1.3.1.1", name:"Livia", year:"2013", gen:4}]},
-      {id:"1.3.2", name:"Sveva", year:"1991", spouse:"G. Cappelli", gen:3, children:[
-        {id:"1.3.2.1", name:"Matilde", year:"2018", gen:4}]},
-      {id:"1.3.3", name:"Clemente", year:"1993", gen:3}]}]},
+// ── DATA ─────────────────────────────────────────────────────────────────
+const ROOT={id:"0",name:"Girolamo Giustiniani",year:"1889–1979",spouse:"Giulia Pandolfini · 1899–2000",children:[
+ {id:"1",name:"Sebastiano",sub:"(Nello)",year:"1922–1998",spouse:"Maria Adelaide (Tussi)",children:[
+   {id:"1.1",name:"Paolo",year:"1951",spouse:"Stefania",children:[
+     {id:"1.1.1",name:"Jacopo",year:"1980",spouse:"Alice",children:[
+       {id:"1.1.1.1",name:"Sebastiano",year:"2015"},{id:"1.1.1.2",name:"Clementina",year:"2017"}]},
+     {id:"1.1.2",name:"Matteo",year:"1984",spouse:"Asimenia",children:[
+       {id:"1.1.2.1",name:"Lea",year:"2018"}]}]},
+   {id:"1.2",name:"Giulio",year:"1952",spouse:"⚭ Bobo Elisabetta; ⚭ Elisabetta",children:[
+     {id:"1.2.1",name:"Giovanni",year:"1978",spouse:"Naho",children:[
+       {id:"1.2.1.1",name:"Eita Giulio",year:"2014"},{id:"1.2.1.2",name:"Luigi Kento",year:"2017"}]},
+     {id:"1.2.2",name:"Niccolò",year:"1979",spouse:"Camilla",children:[
+       {id:"1.2.2.1",name:"Cosimo",year:"2016"},{id:"1.2.2.2",name:"Alvise",year:"2021"}]},
+     {id:"1.2.3",name:"Caterina",year:"2001"},{id:"1.2.4",name:"Costanza",year:"2006"},{id:"1.2.5",name:"Beatrice",year:"2006"}]},
+   {id:"1.3",name:"Antonella",year:"1958",spouse:"⚭ L. Bojola; ⚭ B. Nativi",children:[
+     {id:"1.3.1",name:"Madalena",year:"1979",spouse:"A. Paganini",children:[
+       {id:"1.3.1.1",name:"Livia",year:"2013"}]},
+     {id:"1.3.2",name:"Sveva",year:"1991",spouse:"G. Cappelli",children:[
+       {id:"1.3.2.1",name:"Matilde",year:"2018"}]},
+     {id:"1.3.3",name:"Clemente",year:"1993"}]}]},
+ {id:"2",name:"Elisabetta",sub:"(Lisa)",year:"1923–2015",spouse:"Ugo Contini Bonacossi",children:[
+   {id:"2.1",name:"Giovanni",year:"1948",spouse:"Giuseppina",children:[{id:"2.1.1",name:"Leone",year:"1976"}]},
+   {id:"2.2",name:"Alessandra",year:"1951†",deceased:true,spouse:"Marcello Verga",children:[
+     {id:"2.2.1",name:"Giulia Caterina",year:"1985",spouse:"D. van Drimmelen",children:[
+       {id:"2.2.1.1",name:"Lena Elisabetta",year:"2018"}]},
+     {id:"2.2.2",name:"Andrea Giovanni",year:"1987"},{id:"2.2.3",name:"Tommaso Ugo",year:"1990"}]},
+   {id:"2.3",name:"Vittorio",year:"1952†",deceased:true,spouse:"Marta",children:[
+     {id:"2.3.1",name:"Serena",year:"1976",spouse:"A. Cappelletti",children:[
+       {id:"2.3.1.1",name:"Sandra",year:"2010"},{id:"2.3.1.2",name:"Allegra",year:"2012"}]},
+     {id:"2.3.2",name:"Gaddo",year:"1979",spouse:"Agnese",children:[
+       {id:"2.3.2.1",name:"Olivia",year:"2009"},{id:"2.3.2.2",name:"Vittoria",year:"2013"}]},
+     {id:"2.3.3",name:"Ugo",year:"1983",spouse:"Silvia",children:[{id:"2.3.3.1",name:"Ama",year:"2021"}]}]},
+   {id:"2.4",name:"Benedetta",year:"1958",spouse:"Filippo Fantoni",children:[
+     {id:"2.4.1",name:"Pietro",year:"1984",spouse:"Bianca",children:[{id:"2.4.1.1",name:"Sveva",year:"2018"}]},
+     {id:"2.4.2",name:"Ettore",year:"1989",spouse:"Maria Gina",children:[{id:"2.4.2.1",name:"Niccolò",year:"2021"}]},
+     {id:"2.4.3",name:"Duccio",year:"1994"}]},
+   {id:"2.5",name:"Valentina",year:"1958",spouse:"Manfredi Faldi",children:[{id:"2.5.1",name:"Francesca",year:"1991"}]},
+   {id:"2.6",name:"Beatrice",year:"1963",spouse:"Andrè Benaim",children:[
+     {id:"2.6.1",name:"Oscar",year:"1992"},{id:"2.6.2",name:"Annalù",year:"1995"},{id:"2.6.3",name:"Eva Vittoria",year:"2003"}]},
+   {id:"2.7",name:"Filippo",year:"1964",spouse:"Sabrina",children:[
+     {id:"2.7.1",name:"Jacopo",year:"1997"},{id:"2.7.2",name:"Cosimo",year:"1999"}]}]},
+ {id:"3",name:"Andrea",year:"1924–2004",spouse:"Pia",children:[
+   {id:"3.1",name:"Anna",year:"1957",spouse:"G. Bacci di Capaci",children:[
+     {id:"3.1.1",name:"Federico",year:"1987"},{id:"3.1.2",name:"Giulio",year:"1996"}]},
+   {id:"3.2",name:"Camilla",year:"1958",spouse:"Giuseppe Urso",children:[
+     {id:"3.2.1",name:"Tommaso",year:"1988"},{id:"3.2.2",name:"Angelica",year:"1991"},{id:"3.2.3",name:"Eleonora",year:"1995"}]},
+   {id:"3.3",name:"Ilaria",year:"1961"},{id:"3.4",name:"Lorenzo",year:"1964"},
+   {id:"3.5",name:"Francesca",year:"1968",spouse:"Ugo de Grenet",children:[
+     {id:"3.5.1",name:"Filippo",year:"1997"},{id:"3.5.2",name:"Benedetta",year:"1999"},{id:"3.5.3",name:"Andrea",year:"2003"}]}]},
+ {id:"4",name:"Nicolò",year:"1928",spouse:"Mirella",children:[
+   {id:"4.1",name:"Roberto",year:"1956",spouse:"Alessandra",children:[
+     {id:"4.1.1",name:"Giulia",year:"1988",spouse:"C. Antonielli d'Oulx",children:[
+       {id:"4.1.1.1",name:"Emanuele",year:"2013"},{id:"4.1.1.2",name:"Alessandro",year:"2016"}]},
+     {id:"4.1.2",name:"Giovanna",year:"1990"},{id:"4.1.3",name:"Costanza",year:"1991"},
+     {id:"4.1.4",name:"Carlotta",year:"1994"},{id:"4.1.5",name:"Gaia",year:"1997"}]},
+   {id:"4.2",name:"Giuliana",year:"1958",spouse:"M. De Bartolomeis",children:[
+     {id:"4.2.1",name:"Filippo",year:"1986"},{id:"4.2.2",name:"Matteo",year:"1992"}]},
+   {id:"4.3",name:"Francesco",year:"1968",spouse:"Maria Teresa",children:[
+     {id:"4.3.1",name:"Anna",year:"1999"},{id:"4.3.2",name:"Nicolò",year:"2001"},{id:"4.3.3",name:"Margherita",year:"2014"}]}]},
+ {id:"5",name:"Pio",year:"1930–1995",spouse:"Giorgina",children:[
+   {id:"5.1",name:"Marcantonio",year:"1956†",deceased:true,spouse:"Hanna",children:[
+     {id:"5.1.1",name:"Sebastiano",year:"1982",spouse:"Elisa",children:[
+       {id:"5.1.1.1",name:"Elisabetta V.",year:"2017"},{id:"5.1.1.2",name:"Edoardo F.",year:"2019"}]}]},
+   {id:"5.2",name:"Filippo",year:"1961",spouse:"Barbara",children:[{id:"5.2.1",name:"Maria Pia",year:"2002"}]},
+   {id:"5.3",name:"Alvise",year:"1964",spouse:"Nina",children:[
+     {id:"5.3.1",name:"Leonardo",year:"1997"},{id:"5.3.2",name:"Filippo",year:"1999"},{id:"5.3.3",name:"Marcus",year:"2003"}]},
+   {id:"5.4",name:"Lodovico",year:"1967",spouse:"Caterina",children:[
+     {id:"5.4.1",name:"Delfina",year:"2000"},{id:"5.4.2",name:"Jacopo",year:"2001"},
+     {id:"5.4.3",name:"Maria Sole",year:"2005†",deceased:true}]}]},
+ {id:"6",name:"Maria",sub:"(Mimma)",year:"1933–2014",spouse:"Mario Del Bono",children:[
+   {id:"6.1",name:"Andrea",year:"1960"},
+   {id:"6.2",name:"Beatrice",year:"1961",spouse:"A. Iannizzotto",children:[
+     {id:"6.2.1",name:"Ludovico",year:"1999"},{id:"6.2.2",name:"Tancredi",year:"2001"}]},
+   {id:"6.3",name:"Vittorio",year:"1962",spouse:"Raffaella",children:[
+     {id:"6.3.1",name:"Ippolita",year:"1994"},{id:"6.3.2",name:"Allegra",year:"1996"}]},
+   {id:"6.4",name:"Pia",year:"1964",spouse:"Luca Fabbri",children:[
+     {id:"6.4.1",name:"Federico",year:"1997"},{id:"6.4.2",name:"Tommaso",year:"1999"},{id:"6.4.3",name:"Filippo",year:"2002"}]},
+   {id:"6.5",name:"Giulia",year:"1969"}]},
+ {id:"7",name:"Giorgio",year:"1935",spouse:"Luz",children:[
+   {id:"7.1",name:"Marco",year:"1972",spouse:"Maria Chiara",children:[
+     {id:"7.1.1",name:"Giorgio",year:"2010"},{id:"7.1.2",name:"Raffaele",year:"2015"},{id:"7.1.3",name:"Stefano",year:"2017"}]},
+   {id:"7.2",name:"Girolamo",year:"1974",spouse:"Chiara",children:[
+     {id:"7.2.1",name:"Anastasia",year:"2018"},{id:"7.2.2",name:"Gioele",year:"2020"},{id:"7.2.3",name:"Gabriele",year:"2022"}]},
+   {id:"7.3",name:"Eleonora",year:"1977",spouse:"A. Corini",children:[
+     {id:"7.3.1",name:"Letizia",year:"2008"},{id:"7.3.2",name:"Virginia",year:"2010"},
+     {id:"7.3.3",name:"Giov. Battista",year:"2012"},{id:"7.3.4",name:"Pietro",year:"2015"},{id:"7.3.5",name:"Benedetto",year:"2020"}]}]},
+ {id:"8",name:"Lorenzo",year:"1940",spouse:"Roberta",children:[
+   {id:"8.1",name:"Elisabetta",year:"1971",spouse:"A. Agostinelli",children:[
+     {id:"8.1.1",name:"Tommaso",year:"2002"},{id:"8.1.2",name:"Alvise",year:"2008"}]},
+   {id:"8.2",name:"Benedetto",year:"1973",spouse:"Giovanna",children:[
+     {id:"8.2.1",name:"Lorenzo",year:"2006"},{id:"8.2.2",name:"Edoardo",year:"2008"},{id:"8.2.3",name:"Giacomo",year:"2011"}]},
+   {id:"8.3",name:"Francesca",year:"1986",spouse:"Francesco Cerra",children:[
+     {id:"8.3.1",name:"Maria Ludovica",year:"2019"}]}]}
+]};
 
-  {id:"2", name:"Elisabetta", sub:"(Lisa)", year:"1923–2015", spouse:"Ugo Contini Bonacossi", gen:1, children:[
-    {id:"2.1", name:"Giovanni", year:"1948", spouse:"Giuseppina", gen:2, children:[
-      {id:"2.1.1", name:"Leone", year:"1976", gen:3}]},
-    {id:"2.2", name:"Alessandra", year:"1951†", deceased:true, spouse:"Marcello Verga", gen:2, children:[
-      {id:"2.2.1", name:"Giulia Caterina", year:"1985", spouse:"D. van Drimmelen", gen:3, children:[
-        {id:"2.2.1.1", name:"Lena Elisabetta", year:"2018", gen:4}]},
-      {id:"2.2.2", name:"Andrea Giovanni", year:"1987", gen:3},
-      {id:"2.2.3", name:"Tommaso Ugo", year:"1990", gen:3}]},
-    {id:"2.3", name:"Vittorio", year:"1952†", deceased:true, spouse:"Marta", gen:2, children:[
-      {id:"2.3.1", name:"Serena", year:"1976", spouse:"A. Cappelletti", gen:3, children:[
-        {id:"2.3.1.1", name:"Sandra", year:"2010", gen:4},
-        {id:"2.3.1.2", name:"Allegra", year:"2012", gen:4}]},
-      {id:"2.3.2", name:"Gaddo", year:"1979", spouse:"Agnese", gen:3, children:[
-        {id:"2.3.2.1", name:"Olivia", year:"2009", gen:4},
-        {id:"2.3.2.2", name:"Vittoria", year:"2013", gen:4}]},
-      {id:"2.3.3", name:"Ugo", year:"1983", spouse:"Silvia", gen:3, children:[
-        {id:"2.3.3.1", name:"Ama", year:"2021", gen:4}]}]},
-    {id:"2.4", name:"Benedetta", year:"1958", spouse:"Filippo Fantoni", gen:2, children:[
-      {id:"2.4.1", name:"Pietro", year:"1984", spouse:"Bianca", gen:3, children:[
-        {id:"2.4.1.1", name:"Sveva", year:"2018", gen:4}]},
-      {id:"2.4.2", name:"Ettore", year:"1989", spouse:"Maria Gina", gen:3, children:[
-        {id:"2.4.2.1", name:"Niccolò", year:"2021", gen:4}]},
-      {id:"2.4.3", name:"Duccio", year:"1994", gen:3}]},
-    {id:"2.5", name:"Valentina", year:"1958", spouse:"Manfredi Faldi", gen:2, children:[
-      {id:"2.5.1", name:"Francesca", year:"1991", gen:3}]},
-    {id:"2.6", name:"Beatrice", year:"1963", spouse:"Andrè Benaim", gen:2, children:[
-      {id:"2.6.1", name:"Oscar", year:"1992", gen:3},
-      {id:"2.6.2", name:"Annalù", year:"1995", gen:3},
-      {id:"2.6.3", name:"Eva Vittoria", year:"2003", gen:3}]},
-    {id:"2.7", name:"Filippo", year:"1964", spouse:"Sabrina", gen:2, children:[
-      {id:"2.7.1", name:"Jacopo", year:"1997", gen:3},
-      {id:"2.7.2", name:"Cosimo", year:"1999", gen:3}]}]},
+// ── CONFIG ────────────────────────────────────────────────────────────────
+const D2R=Math.PI/180;
+const TRUNK_H=240;
+// Larger spacing for readability
+const LEN={0:500,1:370,2:295,3:230};
+const CONE={0:164,1:96,2:80,3:66};
+const TH={0:14,1:8.5,2:5,3:3,4:1.8};
+const MINA=5*D2R, MAXA=175*D2R;
+const BC={'1':'#8b4018','2':'#3d6a36','3':'#1c4a72','4':'#6a3472',
+          '5':'#806010','6':'#841818','7':'#186056','8':'#4a3c18'};
 
-  {id:"3", name:"Andrea", year:"1924–2004", spouse:"Pia", gen:1, children:[
-    {id:"3.1", name:"Anna", year:"1957", spouse:"G. Bacci di Capaci", gen:2, children:[
-      {id:"3.1.1", name:"Federico", year:"1987", gen:3},
-      {id:"3.1.2", name:"Giulio", year:"1996", gen:3}]},
-    {id:"3.2", name:"Camilla", year:"1958", spouse:"Giuseppe Urso", gen:2, children:[
-      {id:"3.2.1", name:"Tommaso", year:"1988", gen:3},
-      {id:"3.2.2", name:"Angelica", year:"1991", gen:3},
-      {id:"3.2.3", name:"Eleonora", year:"1995", gen:3}]},
-    {id:"3.3", name:"Ilaria", year:"1961", gen:2},
-    {id:"3.4", name:"Lorenzo", year:"1964", gen:2},
-    {id:"3.5", name:"Francesca", year:"1968", spouse:"Ugo de Grenet", gen:2, children:[
-      {id:"3.5.1", name:"Filippo", year:"1997", gen:3},
-      {id:"3.5.2", name:"Benedetta", year:"1999", gen:3},
-      {id:"3.5.3", name:"Andrea", year:"2003", gen:3}]}]},
+// ── SEEDED RANDOM ─────────────────────────────────────────────────────────
+let _s=20220409;
+const rnd=()=>{_s=(_s*1664525+1013904223)%4294967296;return _s/4294967296;};
+const srnd=()=>rnd()*2-1;
 
-  {id:"4", name:"Nicolò", year:"1928", spouse:"Mirella", gen:1, children:[
-    {id:"4.1", name:"Roberto", year:"1956", spouse:"Alessandra", gen:2, children:[
-      {id:"4.1.1", name:"Giulia", year:"1988", spouse:"C. Antonielli d'Oulx", gen:3, children:[
-        {id:"4.1.1.1", name:"Emanuele", year:"2013", gen:4},
-        {id:"4.1.1.2", name:"Alessandro", year:"2016", gen:4}]},
-      {id:"4.1.2", name:"Giovanna", year:"1990", gen:3},
-      {id:"4.1.3", name:"Costanza", year:"1991", gen:3},
-      {id:"4.1.4", name:"Carlotta", year:"1994", gen:3},
-      {id:"4.1.5", name:"Gaia", year:"1997", gen:3}]},
-    {id:"4.2", name:"Giuliana", year:"1958", spouse:"M. De Bartolomeis", gen:2, children:[
-      {id:"4.2.1", name:"Filippo", year:"1986", gen:3},
-      {id:"4.2.2", name:"Matteo", year:"1992", gen:3}]},
-    {id:"4.3", name:"Francesco", year:"1968", spouse:"Maria Teresa", gen:2, children:[
-      {id:"4.3.1", name:"Anna", year:"1999", gen:3},
-      {id:"4.3.2", name:"Nicolò", year:"2001", gen:3},
-      {id:"4.3.3", name:"Margherita", year:"2014", gen:3}]}]},
+// ── LAYOUT (strict sector — no crossing guarantee) ────────────────────────
+function lc(n){return(!n.children||!n.children.length)?1:n.children.reduce((s,c)=>s+lc(c),0);}
+const AN=[],AE=[];
 
-  {id:"5", name:"Pio", year:"1930–1995", spouse:"Giorgina", gen:1, children:[
-    {id:"5.1", name:"Marcantonio", year:"1956†", deceased:true, spouse:"Hanna", gen:2, children:[
-      {id:"5.1.1", name:"Sebastiano", year:"1982", spouse:"Elisa", gen:3, children:[
-        {id:"5.1.1.1", name:"Elisabetta V.", year:"2017", gen:4},
-        {id:"5.1.1.2", name:"Edoardo F.", year:"2019", gen:4}]}]},
-    {id:"5.2", name:"Filippo", year:"1961", spouse:"Barbara", gen:2, children:[
-      {id:"5.2.1", name:"Maria Pia", year:"2002", gen:3}]},
-    {id:"5.3", name:"Alvise", year:"1964", spouse:"Nina", gen:2, children:[
-      {id:"5.3.1", name:"Leonardo", year:"1997", gen:3},
-      {id:"5.3.2", name:"Filippo", year:"1999", gen:3},
-      {id:"5.3.3", name:"Marcus", year:"2003", gen:3}]},
-    {id:"5.4", name:"Lodovico", year:"1967", spouse:"Caterina", gen:2, children:[
-      {id:"5.4.1", name:"Delfina", year:"2000", gen:3},
-      {id:"5.4.2", name:"Jacopo", year:"2001", gen:3},
-      {id:"5.4.3", name:"Maria Sole", year:"2005†", deceased:true, gen:3}]}]},
-
-  {id:"6", name:"Maria", sub:"(Mimma)", year:"1933–2014", spouse:"Mario Del Bono", gen:1, children:[
-    {id:"6.1", name:"Andrea", year:"1960", gen:2},
-    {id:"6.2", name:"Beatrice", year:"1961", spouse:"A. Iannizzotto", gen:2, children:[
-      {id:"6.2.1", name:"Ludovico", year:"1999", gen:3},
-      {id:"6.2.2", name:"Tancredi", year:"2001", gen:3}]},
-    {id:"6.3", name:"Vittorio", year:"1962", spouse:"Raffaella", gen:2, children:[
-      {id:"6.3.1", name:"Ippolita", year:"1994", gen:3},
-      {id:"6.3.2", name:"Allegra", year:"1996", gen:3}]},
-    {id:"6.4", name:"Pia", year:"1964", spouse:"Luca Fabbri", gen:2, children:[
-      {id:"6.4.1", name:"Federico", year:"1997", gen:3},
-      {id:"6.4.2", name:"Tommaso", year:"1999", gen:3},
-      {id:"6.4.3", name:"Filippo", year:"2002", gen:3}]},
-    {id:"6.5", name:"Giulia", year:"1969", gen:2}]},
-
-  {id:"7", name:"Giorgio", year:"1935", spouse:"Luz", gen:1, children:[
-    {id:"7.1", name:"Marco", year:"1972", spouse:"Maria Chiara", gen:2, children:[
-      {id:"7.1.1", name:"Giorgio", year:"2010", gen:3},
-      {id:"7.1.2", name:"Raffaele", year:"2015", gen:3},
-      {id:"7.1.3", name:"Stefano", year:"2017", gen:3}]},
-    {id:"7.2", name:"Girolamo", year:"1974", spouse:"Chiara", gen:2, children:[
-      {id:"7.2.1", name:"Anastasia", year:"2018", gen:3},
-      {id:"7.2.2", name:"Gioele", year:"2020", gen:3},
-      {id:"7.2.3", name:"Gabriele", year:"2022", gen:3}]},
-    {id:"7.3", name:"Eleonora", year:"1977", spouse:"A. Corini", gen:2, children:[
-      {id:"7.3.1", name:"Letizia", year:"2008", gen:3},
-      {id:"7.3.2", name:"Virginia", year:"2010", gen:3},
-      {id:"7.3.3", name:"Giov. Battista", year:"2012", gen:3},
-      {id:"7.3.4", name:"Pietro", year:"2015", gen:3},
-      {id:"7.3.5", name:"Benedetto", year:"2020", gen:3}]}]},
-
-  {id:"8", name:"Lorenzo", year:"1940", spouse:"Roberta", gen:1, children:[
-    {id:"8.1", name:"Elisabetta", year:"1971", spouse:"A. Agostinelli", gen:2, children:[
-      {id:"8.1.1", name:"Tommaso", year:"2002", gen:3},
-      {id:"8.1.2", name:"Alvise", year:"2008", gen:3}]},
-    {id:"8.2", name:"Benedetto", year:"1973", spouse:"Giovanna", gen:2, children:[
-      {id:"8.2.1", name:"Lorenzo", year:"2006", gen:3},
-      {id:"8.2.2", name:"Edoardo", year:"2008", gen:3},
-      {id:"8.2.3", name:"Giacomo", year:"2011", gen:3}]},
-    {id:"8.3", name:"Francesca", year:"1986", spouse:"Francesco Cerra", gen:2, children:[
-      {id:"8.3.1", name:"Maria Ludovica", year:"2019", gen:3}]}]}
- ]
-};
-
-// ───────────────────────── seeded random ─────────────────────────
-let _seed = 20220409;
-function rnd(){ _seed = (_seed*1664525 + 1013904223) % 4294967296; return _seed/4294967296; }
-function srnd(){ return rnd()*2-1; }
-
-// ───────────────────────── layout (organic fan) ─────────────────────────
-const D2R = Math.PI/180;
-const LEN  = {0:420, 1:300, 2:225, 3:175};  // length of branch to children of a gen-g node
-const CONE = {0:172, 1:96, 2:74, 3:60};     // angular spread (deg) for children of gen-g node
-const nodes = [];
-const edges = [];
-
-function leafCount(n){
-  if(!n.children||!n.children.length) return 1;
-  return n.children.reduce((s,c)=>s+leafCount(c),0);
-}
-
-function place(node, x, y, dir, gen){
-  node.x=x; node.y=y; node.dir=dir;
-  nodes.push(node);
-  const ch = node.children;
-  if(!ch||!ch.length) return;
-  const cone = CONE[gen]*D2R;
-  const total = ch.reduce((s,c)=>s+leafCount(c),0);
-  let a = dir - cone/2;
+function place(node,x,y,dir,gen,branch,aS,aE){
+  node.x=x;node.y=y;node.dir=dir;node.branch=branch;node.gen=gen;
+  AN.push(node);
+  const ch=node.children;if(!ch||!ch.length)return;
+  const cone=CONE[gen]*D2R;
+  const sA=Math.max(aS,dir-cone/2);
+  const eA=Math.min(aE,dir+cone/2);
+  const eff=Math.max(eA-sA,0.02);
+  const tot=ch.reduce((s,c)=>s+lc(c),0);
+  let a=sA;
   ch.forEach(c=>{
-    const frac = leafCount(c)/total;
-    let center = a + cone*frac/2;
-    a += cone*frac;
-    // gentle upward pull so the canopy rounds + organic jitter
-    center = center*0.90 + (90*D2R)*0.10 + srnd()*2.5*D2R;
-    let len = LEN[gen]*(1 + srnd()*0.07);
-    const cx = x + Math.cos(center)*len;
-    const cy = y - Math.sin(center)*len;
-    edges.push({p:node, c:c, gen:gen});
-    place(c, cx, cy, center, gen+1);
+    const w=eff*(lc(c)/tot);
+    const cS=a;const cA=a+w/2;a+=w;
+    const cx=x+Math.cos(cA)*LEN[gen];
+    const cy=y-Math.sin(cA)*LEN[gen];
+    const br=gen===0?c.id:branch;
+    c.branch=br;AE.push({p:node,c,gen,br,cA});
+    place(c,cx,cy,cA,gen+1,br,cS,a);
   });
 }
+place(ROOT,0,0,90*D2R,0,ROOT.id,MINA,MAXA);
+ROOT.x=0;ROOT.y=TRUNK_H*0.6;ROOT.dir=90*D2R;
 
-// crown at origin; trunk goes downward (positive y)
-const CROWN = {x:0, y:0};
-place(ROOT, CROWN.x, CROWN.y, 90*D2R, 0);
-// ROOT logical pos is crown, but we draw the capostipiti medallion lower on the trunk:
-const TRUNK_H = 230;
-ROOT.x = 0; ROOT.y = TRUNK_H*0.60;   // medallion sits on the trunk
-ROOT.dir = 90*D2R;
+// ── BOUNDS ────────────────────────────────────────────────────────────────
+let mnX=1e9,mnY=1e9,mxX=-1e9,mxY=-1e9;
+AN.forEach(n=>{
+  mnX=Math.min(mnX,n.x-170);mxX=Math.max(mxX,n.x+170);
+  mnY=Math.min(mnY,n.y-150);mxY=Math.max(mxY,n.y+95);
+});
+mnY=Math.min(mnY,-30);mxY=Math.max(mxY,TRUNK_H+150);
+const PAD=90;
+const OX=-mnX+PAD,OY=-mnY+PAD;
+const W=(mxX-mnX)+PAD*2,H=(mxY-mnY)+PAD*2;
+const TX=x=>x+OX,TY=y=>y+OY;
 
-// ───────────────────────── bounds ─────────────────────────
-let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
-nodes.forEach(n=>{ minX=Math.min(minX,n.x-150); maxX=Math.max(maxX,n.x+150);
-                   minY=Math.min(minY,n.y-130); maxY=Math.max(maxY,n.y+90); });
-minY=Math.min(minY,-20);
-maxY=Math.max(maxY, TRUNK_H+120); // room for trunk base + roots + cartouche
-const PAD=70;
-const OX=-minX+PAD, OY=-minY+PAD;
-const W=(maxX-minX)+PAD*2, H=(maxY-minY)+PAD*2;
-
-// ───────────────────────── SVG helpers ─────────────────────────
+// ── SVG HELPERS ───────────────────────────────────────────────────────────
 const NS='http://www.w3.org/2000/svg';
-const svg=document.getElementById('art');
-function E(t,a={},txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
-const TX=x=>x+OX, TY=y=>y+OY;
+const art=document.getElementById('art');
+function E(t,a={},txt){
+  const e=document.createElementNS(NS,t);
+  for(const k in a)e.setAttribute(k,a[k]);
+  if(txt!=null)e.textContent=txt;
+  return e;
+}
 
-let showNames=true, tint=false;
+let showNames=true;
+const BGS={};
 
+// ── DECORATIVE LEAF ───────────────────────────────────────────────────────
+// One simple pointed-oval leaf with midrib, placed at (x,y) pointing along 'ang' (radians)
+function leaf(tgt,x,y,ang,sz,op){
+  const deg=(-ang*180/Math.PI).toFixed(2);
+  const g=E('g',{transform:`translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${deg})`});
+  g.appendChild(E('path',{
+    d:`M0,0 C${sz*.38},${-sz*.42} ${sz*.8},${-sz*.38} ${sz},0 C${sz*.8},${sz*.38} ${sz*.38},${sz*.42} 0,0 Z`,
+    fill:`rgba(78,96,40,${(op*.28).toFixed(2)})`,
+    stroke:'#697840','stroke-width':.55}));
+  g.appendChild(E('line',{x1:.5,y1:0,x2:sz*.9,y2:0,
+    stroke:'#586830','stroke-width':.42,opacity:.65}));
+  // two vein pairs
+  [.32,.62].forEach(t=>{
+    const vx=sz*t;
+    g.appendChild(E('line',{x1:vx,y1:0,x2:vx-sz*.06,y2:-sz*.23,stroke:'#586830','stroke-width':.3,opacity:.48}));
+    g.appendChild(E('line',{x1:vx,y1:0,x2:vx-sz*.06,y2:sz*.23,stroke:'#586830','stroke-width':.3,opacity:.48}));
+  });
+  tgt.appendChild(g);
+}
+
+// Small cluster of leaves around a point
+function leafCluster(tgt,x,y,baseAng,count,sz,op){
+  for(let i=0;i<count;i++){
+    const a=baseAng+(i-(count-1)/2)*.52+srnd()*.15;
+    leaf(tgt,x+srnd()*5,y+srnd()*5,a,sz*(0.85+rnd()*.3),op);
+  }
+}
+
+// Scatter leaves along a branch at a parametric position t (0-1)
+function leafAlongEdge(tgt,x1,y1,x2,y2,t,sz,op){
+  const ang=Math.atan2(-(y2-y1),(x2-x1));
+  const x=x1+(x2-x1)*t+srnd()*8;
+  const y=y1+(y2-y1)*t+srnd()*8;
+  const offset=sz*.6+rnd()*sz*.4;
+  const side=srnd()>0?1:-1;
+  leaf(tgt,x+Math.cos(ang+Math.PI/2)*offset*side,
+           y+Math.sin(ang+Math.PI/2)*offset*side,
+           ang+srnd()*.5,sz,op);
+}
+
+// ── BUILD ─────────────────────────────────────────────────────────────────
 function build(){
-  svg.innerHTML='';
-  svg.setAttribute('width',W); svg.setAttribute('height',H);
-  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  _s=20220409; // reset seed for reproducibility
+  art.innerHTML='';
+  for(const k in BGS)delete BGS[k];
+  art.setAttribute('width',W);art.setAttribute('height',H);
 
-  // defs: aged paper, vignette, grain
+  // Defs
   const defs=E('defs');
-  defs.innerHTML=`
-   <radialGradient id="vign" cx="50%" cy="42%" r="72%">
-     <stop offset="0%" stop-color="#f0e6c8"/>
-     <stop offset="62%" stop-color="#e6d6ac"/>
-     <stop offset="100%" stop-color="#cdb682"/>
-   </radialGradient>
-   <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
-     <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .04 0"/>
-     <feComposite operator="over" in2="SourceGraphic"/></filter>
-   <filter id="rough"><feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="2" result="t"/>
-     <feDisplacementMap in="SourceGraphic" in2="t" scale="3.2"/></filter>`;
-  svg.appendChild(defs);
+  defs.innerHTML=`<radialGradient id="bg" cx="50%" cy="40%" r="72%">
+    <stop offset="0%" stop-color="#f0e6c8"/>
+    <stop offset="55%" stop-color="#e5d5ac"/>
+    <stop offset="100%" stop-color="#d0bc88"/>
+  </radialGradient>`;
+  art.appendChild(defs);
+  art.appendChild(E('rect',{x:0,y:0,width:W,height:H,fill:'url(#bg)'}));
 
-  svg.appendChild(E('rect',{x:0,y:0,width:W,height:H,fill:'url(#vign)'}));
+  // Frame
+  const fr=E('g',{fill:'none',stroke:'#8a6830','stroke-width':1.2,opacity:.68});
+  fr.appendChild(E('rect',{x:22,y:22,width:W-44,height:H-44,rx:3}));
+  fr.appendChild(E('rect',{x:30,y:30,width:W-60,height:H-60,rx:2,'stroke-width':.6}));
+  [[28,28],[W-28,28],[28,H-28],[W-28,H-28]].forEach(([cx,cy])=>
+    fr.appendChild(E('text',{x:cx,y:cy+5,'text-anchor':'middle',
+      style:'font-size:14px;fill:#8a6830;stroke:none;font-family:serif;'},'❧')));
+  art.appendChild(fr);
 
-  // ── decorative frame (incisione: doppia linea + svolazzi) ──
-  const fr=E('g',{stroke:'#7a5a2c','fill':'none','stroke-width':1.4,opacity:.85});
-  fr.appendChild(E('rect',{x:24,y:24,width:W-48,height:H-48,rx:3}));
-  fr.appendChild(E('rect',{x:32,y:32,width:W-64,height:H-64,rx:2,'stroke-width':.7,opacity:.7}));
-  ['28,28','28,'+(W-28)*0+ (W-28)].forEach(()=>{});
-  [[28,28],[W-28,28],[28,H-28],[W-28,H-28]].forEach(([cx,cy])=>{
-    fr.appendChild(E('circle',{cx,cy,r:6,'stroke-width':1}));
-    fr.appendChild(E('text',{x:cx,y:cy+4,'text-anchor':'middle','font-family':'serif','font-size':12,fill:'#7a5a2c',stroke:'none'},'❧'));
+  const cx0=TX(0),baseY=TY(TRUNK_H),crownX=TX(0),crownY=TY(0);
+
+  // Ground + roots
+  const gG=E('g',{opacity:.52,fill:'none'});
+  gG.appendChild(E('path',{d:`M${cx0-220},${baseY+8} Q${cx0},${baseY+2} ${cx0+220},${baseY+8}`,
+    stroke:'#5c4324','stroke-width':1.4}));
+  for(let i=-200;i<=200;i+=12)
+    gG.appendChild(E('line',{x1:cx0+i,y1:baseY+10,x2:cx0+i-6,y2:baseY+20,
+      stroke:'#5c4324','stroke-width':.42,opacity:.36}));
+  [-1,-.55,0,.55,1].forEach(s=>{
+    const ex=cx0+s*170,ey=baseY+42+Math.abs(s)*10;
+    gG.appendChild(E('path',{d:`M${cx0+s*9},${baseY} C${cx0+s*44},${baseY+16} ${ex-s*28},${ey-18} ${ex},${ey}`,
+      stroke:'#5a4020','stroke-width':2.7-Math.abs(s)*1.2}));
   });
-  svg.appendChild(fr);
+  art.appendChild(gG);
 
-  const g=E('g',{filter:'url(#rough)'});
-  svg.appendChild(g);
-
-  // ── ground + roots ──
-  const baseY = TY(TRUNK_H);
-  const cx = TX(0);
-  const ground=E('g',{stroke:'#5c4324','stroke-width':1,fill:'none',opacity:.55});
-  // soil line with little hatch
-  for(let i=-150;i<=150;i+=11){
-    ground.appendChild(E('line',{x1:cx+i,y1:baseY+10,x2:cx+i-7,y2:baseY+20,'stroke-width':.6,opacity:.4}));
+  // Trunk
+  const tw=29;
+  art.appendChild(E('path',{
+    d:`M${crownX-7},${crownY} C${crownX-13},${crownY+72} ${cx0-tw*.72},${baseY-56} ${cx0-tw},${baseY}
+       L${cx0+tw},${baseY} C${cx0+tw*.72},${baseY-56} ${crownX+13},${crownY+72} ${crownX+7},${crownY} Z`,
+    fill:'#7c5c2c',stroke:'#4a3418','stroke-width':1}));
+  art.appendChild(E('path',{
+    d:`M${crownX+2},${crownY+8} C${crownX+10},${crownY+80} ${cx0+tw*.5},${baseY-50} ${cx0+tw},${baseY}
+       L${cx0+tw*.35},${baseY} C${cx0+tw*.1},${baseY-58} ${crownX},${crownY+74} ${crownX},${crownY+10} Z`,
+    fill:'#5a4020',opacity:.36,stroke:'none'}));
+  const bk=E('g',{stroke:'#4a3418','stroke-width':.46,fill:'none',opacity:.33});
+  for(let t=1;t<10;t++){
+    const yy=crownY+10+t*((baseY-crownY-12)/10),ww=tw*(t/10)*.85+5;
+    bk.appendChild(E('path',{d:`M${cx0-ww*.7},${yy} q${ww*.7},5 ${ww*1.4},0`}));
   }
-  ground.appendChild(E('path',{d:`M${cx-170},${baseY+8} Q ${cx},${baseY+2} ${cx+170},${baseY+8}`,'stroke-width':1.2}));
-  // roots
-  [-1,-0.55,0,0.55,1].forEach((s,i)=>{
-    const len=70+Math.abs(s)*46, ex=cx+s*150, ey=baseY+40+Math.abs(s)*8;
-    ground.appendChild(E('path',{d:`M${cx+s*9},${baseY} C ${cx+s*40},${baseY+18} ${ex-s*30},${ey-22} ${ex},${ey}`,'stroke-width':2.4-Math.abs(s)*1.1}));
+  art.appendChild(bk);
+
+  // Crown foliage cluster (decorative)
+  const crowG=E('g',{opacity:.72});
+  leafCluster(crowG,crownX,crownY-8,90*D2R,5,14,.9);
+  leafCluster(crowG,crownX-18,crownY+12,110*D2R,3,10,.7);
+  leafCluster(crowG,crownX+16,crownY+12,70*D2R,3,10,.7);
+  art.appendChild(crowG);
+
+  // 8 branch groups
+  ROOT.children.forEach(c=>{
+    const g=E('g',{id:`bg-${c.id}`});
+    BGS[c.id]=g;art.appendChild(g);
   });
-  svg.appendChild(ground);
 
-  // ── trunk (tapered, with bark hatching + shaded side) ──
-  const crownX=TX(0), crownY=TY(0);
-  const tw=30; // trunk half-width at base
-  const trunk=E('path',{
-    d:`M${crownX-7},${crownY} C ${crownX-10},${crownY+70} ${cx-tw*0.7},${baseY-60} ${cx-tw},${baseY}
-       L ${cx+tw},${baseY} C ${cx+tw*0.7},${baseY-60} ${crownX+10},${crownY+70} ${crownX+7},${crownY} Z`,
-    fill:'#7c5c30',stroke:'#4a3418','stroke-width':1.1,opacity:.95});
-  svg.appendChild(trunk);
-  // shaded right side
-  svg.appendChild(E('path',{d:`M${crownX+2},${crownY+10} C ${crownX+8},${crownY+80} ${cx+tw*0.5},${baseY-50} ${cx+tw},${baseY} L ${cx+tw*0.4},${baseY} C ${cx+tw*0.1},${baseY-60} ${crownX-1},${crownY+70} ${crownX-1},${crownY+12} Z`,fill:'#5e4424',opacity:.45,stroke:'none'}));
-  // bark hatch
-  const bark=E('g',{stroke:'#4a3418','stroke-width':.5,opacity:.4,fill:'none'});
-  for(let t=0;t<10;t++){const yy=crownY+12+t*((baseY-crownY-12)/10);const ww=tw*(t/10)*0.9+5;
-    bark.appendChild(E('path',{d:`M${cx-ww*0.7},${yy} q ${ww*0.7},6 ${ww*1.4},0`}));}
-  svg.appendChild(bark);
+  // Edges + inline foliage along edges
+  AE.forEach(ed=>{
+    const isCrown=ed.gen===0;
+    const x1=isCrown?crownX:TX(ed.p.x),y1=isCrown?crownY:TY(ed.p.y);
+    const x2=TX(ed.c.x),y2=TY(ed.c.y);
+    const dx=x2-x1,dy=y2-y1,L=Math.hypot(dx,dy)||1;
+    const nx=-dy/L,ny=dx/L;
+    const b=srnd()*L*.09;
+    const c1x=x1+dx*.3+nx*b*.6,c1y=y1+dy*.3+ny*b*.6;
+    const c2x=x1+dx*.68+nx*b, c2y=y1+dy*.68+ny*b;
+    const d=`M${x1},${y1} C${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`;
+    const tgt=BGS[ed.br]||art;
+    tgt.appendChild(E('path',{d,fill:'none',stroke:'#6b4f28',
+      'stroke-width':TH[ed.gen],'stroke-linecap':'round'}));
+    tgt.appendChild(E('path',{d,fill:'none',stroke:'#9a7a44',
+      'stroke-width':Math.max(.4,TH[ed.gen]*.3),'stroke-linecap':'round',opacity:.46}));
 
-  // ── branches (woody, tapered) drawn from crown ──
-  const TH={0:13,1:6.5,2:3.6,3:2.2};
-  const branchG=E('g',{fill:'none','stroke-linecap':'round'});
-  edges.forEach(ed=>{
-    const x1=TX(ed.p.x), y1=TY(ed.p.y), x2=TX(ed.c.x), y2=TY(ed.c.y);
-    // origin of gen-0 limbs is the crown, not the medallion
-    const ox = ed.gen===0 ? crownX : x1;
-    const oy = ed.gen===0 ? crownY : y1;
-    const mx=(ox+x2)/2, my=(oy+y2)/2;
-    const dx=x2-ox, dy=y2-oy, L=Math.hypot(dx,dy)||1;
-    const nx=-dy/L, ny=dx/L;
-    const bend=(srnd())*L*0.13;
-    const c1x=ox+dx*0.35+nx*bend*0.6, c1y=oy+dy*0.35+ny*bend*0.6;
-    const c2x=ox+dx*0.7+nx*bend, c2y=oy+dy*0.7+ny*bend;
-    branchG.appendChild(E('path',{
-      d:`M${ox},${oy} C ${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`,
-      stroke:'#6b4f28','stroke-width':TH[ed.gen],opacity:.92}));
-    // small inner highlight line
-    branchG.appendChild(E('path',{
-      d:`M${ox},${oy} C ${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`,
-      stroke:'#8a6a38','stroke-width':Math.max(.5,TH[ed.gen]*0.35),opacity:.5}));
-  });
-  svg.appendChild(branchG);
-
-  // ── foliage: small leaf clusters along outer branches ──
-  const folG=E('g');
-  function leaf(x,y,ang,size,strong){
-    const col = tint ? (strong?'#7c8a4e':'#8a965c') : '#6b4f28';
-    const fill = tint ? (strong?'rgba(124,138,78,.55)':'rgba(138,150,92,.40)') : 'rgba(107,79,40,.10)';
-    const gg=E('g',{transform:`translate(${x},${y}) rotate(${-ang*180/Math.PI})`});
-    gg.appendChild(E('path',{d:`M0,0 C ${size*.4},${-size*.5} ${size*.85},${-size*.5} ${size},0 C ${size*.85},${size*.5} ${size*.4},${size*.5} 0,0 Z`,
-      fill:fill,stroke:col,'stroke-width':.7,opacity:.9}));
-    gg.appendChild(E('line',{x1:0,y1:0,x2:size,y2:0,stroke:col,'stroke-width':.5,opacity:.7}));
-    folG.appendChild(gg);
-  }
-  // leaves at terminal nodes only, light, so names stay readable
-  nodes.forEach(n=>{
-    const x=TX(n.x), y=TY(n.y);
-    const terminal=!n.children||!n.children.length;
-    if(terminal && n.gen>=3){
-      for(let i=0;i<2;i++){
-        const a = n.dir + Math.PI*0.5 + srnd()*0.8;
-        leaf(x+srnd()*5, y+srnd()*5, a, 9, true);
-      }
+    // Decorative leaves along branches (more prominent on gen0/1 limbs)
+    if(ed.gen===0){
+      // Main limbs: a pair of leaves halfway up
+      leafAlongEdge(tgt,x1,y1,x2,y2,.55,13,.85);
+      leafAlongEdge(tgt,x1,y1,x2,y2,.72,11,.75);
+      leafAlongEdge(tgt,x1,y1,x2,y2,.38,10,.65);
+    } else if(ed.gen===1){
+      // Secondary branches: a leaf or two
+      if(rnd()>.3) leafAlongEdge(tgt,x1,y1,x2,y2,.6,10,.75);
+      if(rnd()>.55) leafAlongEdge(tgt,x1,y1,x2,y2,.78,8,.6);
+    } else if(ed.gen===2 && rnd()>.5){
+      leafAlongEdge(tgt,x1,y1,x2,y2,.65,7,.6);
     }
   });
-  svg.appendChild(folG);
 
-  // ── person nodes ──
-  const peopleG=E('g');
-  nodes.forEach(n=>{
-    const x=TX(n.x), y=TY(n.y);
+  // Nodes
+  AN.forEach(n=>{
+    const x=TX(n.x),y=TY(n.y);
+    const isCapo=n.gen===0,isFiglio=n.gen===1;
     const grp=E('g',{cursor:'pointer'});
-    const isCapo=n.gen===0, isFiglio=n.gen===1;
 
     if(isCapo){
-      grp.appendChild(E('circle',{cx:x,cy:y,r:21,fill:'#2f2110',stroke:'#9a7634','stroke-width':2}));
-      grp.appendChild(E('circle',{cx:x,cy:y,r:17,fill:'none',stroke:'#caa856','stroke-width':.8,opacity:.8}));
-      grp.appendChild(E('text',{x,y:y+5,'text-anchor':'middle','font-family':'Cinzel Decorative,serif','font-size':16,fill:'#e9dcbb'},'⚜'));
+      grp.appendChild(E('circle',{cx:x,cy:y,r:23,fill:'#2a1d0e',stroke:'#9a7634','stroke-width':2}));
+      grp.appendChild(E('circle',{cx:x,cy:y,r:18,fill:'none',stroke:'#caa856','stroke-width':.8,opacity:.72}));
+      grp.appendChild(E('text',{x,y:y+7,'text-anchor':'middle',
+        style:'font-size:18px;fill:#e9dcbb;font-family:serif;'},'⚜'));
     } else if(isFiglio){
-      grp.appendChild(E('circle',{cx:x,cy:y,r:8,fill:'#7c5c30',stroke:'#4a3418','stroke-width':1.2}));
-      grp.appendChild(E('circle',{cx:x,cy:y,r:11,fill:'none',stroke:'#9a7634','stroke-width':.7,opacity:.7}));
+      grp.appendChild(E('circle',{cx:x,cy:y,r:11,fill:'#7a5a28',stroke:'#4a3418','stroke-width':1.4}));
+      grp.appendChild(E('circle',{cx:x,cy:y,r:15,fill:'none',stroke:'#9a7634','stroke-width':.65,opacity:.58}));
     } else {
-      const r = n.gen===2?4.6 : n.gen===3?3.4 : 2.8;
-      // blossom/bud
-      grp.appendChild(E('circle',{cx:x,cy:y,r:r+1.4,fill:'none',stroke:'#6b4f28','stroke-width':.6,opacity:.5}));
-      grp.appendChild(E('circle',{cx:x,cy:y,r,fill: n.deceased?'#b9a878': (tint?'#c9923f':'#8a6a38'),stroke:'#4a3418','stroke-width':.8,opacity:.95}));
-      if(n.deceased) grp.appendChild(E('text',{x:x+r+3,y:y-r,'font-family':'serif','font-size':8,fill:'#6b4f28'},'†'));
+      const r=n.gen===2?5.5:n.gen===3?4:3.2;
+      grp.appendChild(E('circle',{cx:x,cy:y,r:r+2.2,fill:'none',stroke:'#7a6030','stroke-width':.5,opacity:.38}));
+      grp.appendChild(E('circle',{cx:x,cy:y,r,
+        fill:n.deceased?'#b0a060':'#8a6838',stroke:'#4a3418','stroke-width':.8}));
+      if(n.deceased)
+        grp.appendChild(E('text',{x:x+r+4,y:y-r+1,
+          style:'font-size:9px;fill:#6a4020;font-family:serif;'},'†'));
+      // Leaf cluster at terminal tips
+      if(!n.children||!n.children.length){
+        const tgt=BGS[n.branch]||art;
+        leafCluster(tgt,x,y,n.dir,3,10,.88);
+      }
     }
 
-    // name label
-    if(showNames || isCapo || isFiglio){
+    // Labels
+    if(showNames||isCapo||isFiglio){
       const terminal=!n.children||!n.children.length;
-      const fs = isCapo?15 : isFiglio?13.5 : (n.gen===2?12:11);
-      const nodeR = isCapo?21 : isFiglio?8 : (n.gen===2?5:3.4);
+      const fs=isCapo?15:isFiglio?13.5:n.gen===2?12:11;
+      const nr=isCapo?23:isFiglio?11:n.gen===2?5.5:4;
+      const lbl=E('g',{class:'lbl'});
+      const bs=`font-family:'IM Fell English',serif;paint-order:stroke fill;stroke:#ece0c2;fill:#2a1d0e;`;
+      const ss=`font-family:'IM Fell English',serif;font-style:italic;paint-order:stroke fill;stroke:#ece0c2;fill:#6a4a20;`;
 
-      if(terminal && !isCapo && !isFiglio){
-        // ── radial label: fans outward along the branch direction ──
-        const ang = n.dir;
-        let deg = -ang*180/Math.PI;
-        const gap = nodeR + 7;
-        let anchor='start', flip=1;
-        if(Math.cos(ang) < 0){ deg += 180; flip=-1; }   // keep upright, read outward
-        const label=E('g',{class:'lbl',transform:`translate(${x},${y}) rotate(${deg})`});
-        const yName = flip>0 ? -2 : fs-1;
-        const yYear = flip>0 ? fs-2 : -2 - fs*0.78;
-        const t1=E('text',{x:gap,y:yName,'text-anchor':anchor,'font-family':'IM Fell English,serif','font-size':fs,fill:'#3a2a16'}, n.name+(n.sub?' '+n.sub:''));
-        const halo=t1.cloneNode(true); halo.setAttribute('stroke','#ece0c2'); halo.setAttribute('stroke-width','3'); halo.setAttribute('opacity','.9');
-        label.appendChild(halo); label.appendChild(t1);
-        if(n.year){
-          const t2=E('text',{x:gap,y:yYear,'text-anchor':anchor,'font-family':'IM Fell English,serif','font-style':'italic','font-size':fs*0.76,fill:'#6e4f24'}, n.year);
-          const h2=t2.cloneNode(true); h2.setAttribute('stroke','#ece0c2'); h2.setAttribute('stroke-width','2.6'); h2.setAttribute('opacity','.9');
-          label.appendChild(h2); label.appendChild(t2);
-        }
-        grp.appendChild(label);
+      if(!isCapo && terminal){
+        const ang=n.dir;
+        let deg=(-ang*180/Math.PI);
+        const flip=Math.cos(ang)<0;
+        if(flip)deg+=180;
+        const gap=nr+8;
+        lbl.setAttribute('transform',`translate(${x},${y}) rotate(${deg.toFixed(2)})`);
+        lbl.appendChild(E('text',{x:gap,y:flip?fs-1.5:-1.5,
+          style:`font-size:${fs}px;stroke-width:3.5px;${bs}`},
+          n.name+(n.sub?` ${n.sub}`:'')));
+        if(n.year)
+          lbl.appendChild(E('text',{x:gap,y:flip?-1.5:fs*.78-1,
+            style:`font-size:${(fs*.75).toFixed(1)}px;stroke-width:3px;${ss}`},n.year));
       } else {
-        // ── horizontal label for trunk / inner nodes ──
-        const right = n.x>=0;
-        const off = isCapo?28 : isFiglio?15 : 11;
-        const lx = right? x+off : x-off;
-        const anchor = right?'start':'end';
-        const label = E('g',{class:'lbl'});
-        const t1 = E('text',{x:lx,y:y-1,'text-anchor':anchor,'font-family':'IM Fell English,serif','font-size':fs,fill:'#3a2a16'}, n.name+(n.sub?' '+n.sub:''));
-        const halo=t1.cloneNode(true); halo.setAttribute('stroke','#ece0c2'); halo.setAttribute('stroke-width','3.4'); halo.setAttribute('opacity','.9');
-        label.appendChild(halo); label.appendChild(t1);
-        if(n.year){
-          const t2=E('text',{x:lx,y:y+(fs-1),'text-anchor':anchor,'font-family':'IM Fell English,serif','font-style':'italic','font-size':fs*0.78,fill:'#6e4f24'}, n.year);
-          const h2=t2.cloneNode(true); h2.setAttribute('stroke','#ece0c2'); h2.setAttribute('stroke-width','2.8'); h2.setAttribute('opacity','.9');
-          label.appendChild(h2); label.appendChild(t2);
-        }
-        grp.appendChild(label);
+        const right=n.x>=0;
+        const lx=right?x+(nr+9):x-(nr+9);
+        const anch=right?'start':'end';
+        lbl.appendChild(E('text',{x:lx,y:y+fs*.35,'text-anchor':anch,
+          style:`font-size:${fs}px;stroke-width:3.8px;${bs}`},
+          n.name+(n.sub?` ${n.sub}`:'')));
+        if(n.year)
+          lbl.appendChild(E('text',{x:lx,y:y+fs*1.42,'text-anchor':anch,
+            style:`font-size:${(fs*.76).toFixed(1)}px;stroke-width:3px;${ss}`},n.year));
       }
+      grp.appendChild(lbl);
     }
 
     grp.addEventListener('mouseenter',()=>{
       const tip=document.getElementById('tip');
-      let c=`<b>${n.name}${n.sub?' '+n.sub:''}</b> · ${n.year||'—'}`;
-      if(n.spouse) c+=`<br><i>⚭ ${n.spouse}</i>`;
-      if(n.children&&n.children.length) c+=`<br><span style="color:#caa856">${leafCount(n)} discendenti</span>`;
-      tip.innerHTML=c; tip.style.display='block';
+      let html=`<b>${n.name}${n.sub?` ${n.sub}`:''}</b> · ${n.year||'—'}`;
+      if(n.spouse)html+=`<br><i>⚭ ${n.spouse}</i>`;
+      if(n.children&&n.children.length)html+=`<br><span style="color:#caa856">${lc(n)} discendenti</span>`;
+      tip.innerHTML=html;tip.style.display='block';
     });
-    grp.addEventListener('mousemove',e=>{const tip=document.getElementById('tip');tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';});
+    grp.addEventListener('mousemove',e=>{
+      const t=document.getElementById('tip');
+      t.style.left=`${e.clientX+14}px`;t.style.top=`${e.clientY-8}px`;
+    });
     grp.addEventListener('mouseleave',()=>document.getElementById('tip').style.display='none');
-    peopleG.appendChild(grp);
+    (n.gen===0?art:(BGS[n.branch]||art)).appendChild(grp);
   });
-  svg.appendChild(peopleG);
 
-  // ── capostipiti banner under the trunk ──
-  const by=TY(TRUNK_H)+58, bw=300, bx=cx-bw/2;
-  const ban=E('g');
-  ban.appendChild(E('path',{d:`M${bx-14},${by} l14,-12 l${bw+0},0 l14,12 l-14,12 l${-bw},0 Z`,
-    fill:'#2f2110',stroke:'#9a7634','stroke-width':1.4,opacity:.95}));
-  ban.appendChild(E('text',{x:cx,y:by-1,'text-anchor':'middle','font-family':'Cinzel,serif','font-size':12.5,'letter-spacing':'.12em',fill:'#e9dcbb'},'GIROLAMO GIUSTINIANI'));
-  ban.appendChild(E('text',{x:cx,y:by+13,'text-anchor':'middle','font-family':'IM Fell English,serif','font-style':'italic','font-size':11,fill:'#caa856'},'⚭ Giulia Pandolfini · 1889–2000'));
-  svg.appendChild(ban);
-
-  // ── title cartouche (top) ──
-  const tcy=TY(minY)+54;
+  // Title
   const tg=E('g');
-  tg.appendChild(E('text',{x:cx,y:TY(minY)+34,'text-anchor':'middle','font-family':'Cinzel Decorative,serif','font-weight':700,'font-size':30,fill:'#3a2a16','letter-spacing':'.06em'},'Arbor Genealogica'));
-  tg.appendChild(E('text',{x:cx,y:TY(minY)+58,'text-anchor':'middle','font-family':'Cinzel,serif','font-size':14,fill:'#6e4f24','letter-spacing':'.22em'},'· DELLA  FAMIGLIA  GIUSTINIANI ·'));
-  tg.appendChild(E('text',{x:cx,y:TY(minY)+76,'text-anchor':'middle','font-family':'IM Fell English,serif','font-style':'italic','font-size':12,fill:'#7a5a2c'},'dai Giustiniani di Venezia — aggiornamento MMXXII'));
-  // flourish rule
-  tg.appendChild(E('path',{d:`M${cx-120},${TY(minY)+86} q120,10 240,0`,fill:'none',stroke:'#9a7634','stroke-width':.8,opacity:.7}));
-  tg.appendChild(E('text',{x:cx,y:TY(minY)+92,'text-anchor':'middle','font-family':'serif','font-size':13,fill:'#9a7634'},'❦'));
-  svg.appendChild(tg);
+  tg.appendChild(E('text',{x:TX(0),y:TY(mnY)+44,'text-anchor':'middle',
+    style:'font-family:"Cinzel Decorative",serif;font-weight:700;font-size:30px;fill:#2a1d0e;letter-spacing:.06em;'},'Arbor Genealogica'));
+  tg.appendChild(E('text',{x:TX(0),y:TY(mnY)+66,'text-anchor':'middle',
+    style:'font-family:"Cinzel",serif;font-size:13px;fill:#6a4a20;letter-spacing:.2em;'},'· DELLA  FAMIGLIA  GIUSTINIANI ·'));
+  tg.appendChild(E('text',{x:TX(0),y:TY(mnY)+84,'text-anchor':'middle',
+    style:'font-family:"IM Fell English",serif;font-style:italic;font-size:12px;fill:#7a5a2c;'},'dai Giustiniani di Venezia — aggiornamento MMXXII'));
+  tg.appendChild(E('path',{d:`M${TX(0)-130},${TY(mnY)+96} q130,10 260,0`,
+    fill:'none',stroke:'#9a7634','stroke-width':.8,opacity:.68}));
+  tg.appendChild(E('text',{x:TX(0),y:TY(mnY)+103,'text-anchor':'middle',
+    style:'font-family:serif;font-size:14px;fill:#9a7634;'},'❦'));
+  art.appendChild(tg);
 
-  // grain overlay
-  svg.appendChild(E('rect',{x:0,y:0,width:W,height:H,filter:'url(#grain)',fill:'#000',opacity:.5,'pointer-events':'none'}));
+  // Capostipiti banner
+  const by2=TY(TRUNK_H)+64,bw=300;
+  const ban=E('g');
+  ban.appendChild(E('path',{
+    d:`M${cx0-bw/2-16},${by2} l16,-13 ${bw},0 16,13 -16,13 ${-bw},0 Z`,
+    fill:'#2a1d0e',stroke:'#9a7634','stroke-width':1.4}));
+  ban.appendChild(E('text',{x:cx0,y:by2,'text-anchor':'middle',
+    style:'font-family:"Cinzel",serif;font-size:12.5px;letter-spacing:.12em;fill:#e9dcbb;'},'GIROLAMO GIUSTINIANI'));
+  ban.appendChild(E('text',{x:cx0,y:by2+14,'text-anchor':'middle',
+    style:'font-family:"IM Fell English",serif;font-style:italic;font-size:11px;fill:#caa856;'},'⚭ Giulia Pandolfini · 1889–2000'));
+  art.appendChild(ban);
+
+  document.querySelectorAll('input[data-id]').forEach(sl=>{
+    const g=BGS[sl.dataset.id];if(g)g.style.opacity=sl.value/100;
+  });
 }
 
-// ───────────────────────── pan / zoom ─────────────────────────
+// ── PANEL ─────────────────────────────────────────────────────────────────
+function buildPanel(){
+  const pb=document.getElementById('pb');pb.innerHTML='';
+  ROOT.children.forEach(c=>{
+    const col=BC[c.id]||'#8a6030';
+    const row=document.createElement('div');row.className='br';
+    row.innerHTML=`<div class="dot" style="background:${col}"></div>
+      <span class="bname">${c.id}. ${c.name}</span>
+      <input type="range" min="5" max="100" value="100" data-id="${c.id}">`;
+    pb.appendChild(row);
+    row.querySelector('.bname').addEventListener('click',()=>isolate(c.id));
+    row.querySelector('input').addEventListener('input',function(){
+      const g=BGS[this.dataset.id];if(g)g.style.opacity=this.value/100;
+    });
+  });
+  const acts=document.createElement('div');acts.className='pacts';
+  acts.innerHTML=`<button class="pbtn" onclick="resetOp()">Reset</button>
+    <button class="pbtn" onclick="isolate(null)">Mostra tutti</button>`;
+  pb.appendChild(acts);
+}
+
+function isolate(id){
+  Object.entries(BGS).forEach(([k,g])=>{
+    const op=(!id||k===id)?1:.08;
+    g.style.opacity=op;
+    const sl=document.querySelector(`input[data-id="${k}"]`);
+    if(sl)sl.value=op*100;
+  });
+}
+function resetOp(){
+  Object.values(BGS).forEach(g=>g.style.opacity=1);
+  document.querySelectorAll('input[data-id]').forEach(s=>s.value=100);
+}
+function toggleNames(){
+  showNames=!showNames;
+  document.getElementById('bn').classList.toggle('on',showNames);
+  build();
+}
+
+// ── PAN / ZOOM ────────────────────────────────────────────────────────────
 const stage=document.getElementById('stage');
-let s=1,px=0,py=0,drag=false,lx=0,ly=0;
-function apply(){svg.style.transform=`translate(${px}px,${py}px) scale(${s})`;document.getElementById('zl').textContent=Math.round(s*100)+'%';}
-stage.addEventListener('mousedown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
-window.addEventListener('mousemove',e=>{if(!drag)return;px+=e.clientX-lx;py+=e.clientY-ly;lx=e.clientX;ly=e.clientY;apply();});
+let sc=1,px=0,py=0,drag=false,lx=0,ly=0,rafId=null;
+function apply(){
+  art.style.transform=`translate3d(${px}px,${py}px,0) scale(${sc})`;
+  document.getElementById('zl').textContent=`${Math.round(sc*100)}%`;
+  rafId=null;
+}
+const go=()=>{if(!rafId)rafId=requestAnimationFrame(apply);};
+stage.addEventListener('mousedown',e=>{
+  if(e.button!==0||e.target.closest('input'))return;
+  drag=true;lx=e.clientX;ly=e.clientY;e.preventDefault();
+});
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;px+=e.clientX-lx;py+=e.clientY-ly;lx=e.clientX;ly=e.clientY;go();
+});
 window.addEventListener('mouseup',()=>drag=false);
-stage.addEventListener('wheel',e=>{e.preventDefault();const d=e.deltaY>0?0.9:1.1;const r=stage.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;px=mx-(mx-px)*d;py=my-(my-py)*d;s=Math.max(0.08,Math.min(5,s*d));apply();},{passive:false});
-let ltd=null;
-stage.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;ltd=Math.hypot(dx,dy);}});
-stage.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&drag){px+=e.touches[0].clientX-lx;py+=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;apply();}if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,dd=Math.hypot(dx,dy);if(ltd){s=Math.max(0.08,Math.min(5,s*(dd/ltd)));apply();}ltd=dd;}},{passive:false});
-stage.addEventListener('touchend',()=>{drag=false;ltd=null;});
+stage.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const d=e.deltaY<0?1.1:.909;
+  const r=stage.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  px=mx-(mx-px)*d;py=my-(my-py)*d;sc=Math.max(.06,Math.min(6,sc*d));go();
+},{passive:false});
+let td=null;
+stage.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){drag=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;}
+  if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;td=Math.hypot(dx,dy);}
+},{passive:true});
+stage.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(e.touches.length===1&&drag){px+=e.touches[0].clientX-lx;py+=e.touches[0].clientY-ly;lx=e.touches[0].clientX;ly=e.touches[0].clientY;go();}
+  if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY,dd=Math.hypot(dx,dy);if(td){sc=Math.max(.06,Math.min(6,sc*(dd/td)));go();}td=dd;}
+},{passive:false});
+stage.addEventListener('touchend',()=>{drag=false;td=null;});
+function zIn(){sc=Math.min(6,sc*1.2);go();}
+function zOut(){sc=Math.max(.06,sc*.833);go();}
+function fit(){
+  const vw=stage.clientWidth,vh=stage.clientHeight-44;
+  sc=Math.min(vw/W,vh/H)*.92;px=(stage.clientWidth-W*sc)/2;py=(stage.clientHeight-H*sc)/2;go();
+}
 
-function zoomIn(){s=Math.min(5,s*1.2);apply();}
-function zoomOut(){s=Math.max(0.08,s*0.83);apply();}
-function fit(){const vw=stage.clientWidth,vh=stage.clientHeight;s=Math.min(vw/W,vh/H)*0.95;px=(vw-W*s)/2;py=(vh-H*s)/2;apply();}
-function toggleNames(){showNames=!showNames;document.getElementById('bn').classList.toggle('on',showNames);build();}
-function toggleTint(){tint=!tint;document.getElementById('bt').classList.toggle('on',tint);build();}
+// ── GRAIN OVERLAY ─────────────────────────────────────────────────────────
+(()=>{
+  const gc=document.createElement('canvas');gc.width=gc.height=256;
+  const gx=gc.getContext('2d'),img=gx.createImageData(256,256);
+  for(let i=0;i<img.data.length;i+=4){
+    const v=(Math.random()*36)|0;
+    img.data[i]=v+38;img.data[i+1]=v+30;img.data[i+2]=v+14;img.data[i+3]=(Math.random()*15)|0;
+  }
+  gx.putImageData(img,0,0);
+  const d=document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:200;';
+  d.style.backgroundImage=`url(${gc.toDataURL()})`;
+  d.style.backgroundSize='256px 256px';
+  document.body.appendChild(d);
+})();
 
-build();
-fit();
+// ── PASSWORD + INIT ───────────────────────────────────────────────────────
+const PWD='giustiniani1889';
+
+function checkPwd(){
+  const input=document.getElementById('gpwd');
+  if(input.value===PWD){
+    sessionStorage.setItem('auth','ok');
+    const gate=document.getElementById('gate');
+    gate.style.opacity='0';
+    setTimeout(()=>{gate.remove();},320);
+    initTree();
+  } else {
+    document.getElementById('gerr').style.display='block';
+    input.value='';input.focus();
+  }
+}
+document.getElementById('gpwd').addEventListener('keydown',e=>{
+  if(e.key==='Enter') checkPwd();
+});
+
+function initTree(){build();buildPanel();setTimeout(fit,80);}
+
+// Auto-auth if already logged in this session
+if(sessionStorage.getItem('auth')==='ok'){
+  document.getElementById('gate').remove();
+  initTree();
+} else {
+  setTimeout(()=>document.getElementById('gpwd').focus(),200);
+}
 </script>
 </body>
 </html>
