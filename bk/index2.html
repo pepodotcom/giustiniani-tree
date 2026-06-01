@@ -92,17 +92,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
   font-size:11px;color:#5a4020;pointer-events:none;z-index:40;
   background:rgba(233,220,180,.72);padding:3px 12px;border-radius:10px;
   font-family:'IM Fell English',serif;}
-
-/* JPEG export overlay */
-#exp-overlay{display:none;position:fixed;inset:0;z-index:9000;
-  background:rgba(42,28,12,.68);align-items:center;justify-content:center;flex-direction:column;gap:18px;}
-#exp-overlay.active{display:flex;}
-.exp-spinner{width:44px;height:44px;border:4px solid rgba(202,168,86,.25);
-  border-top-color:#caa856;border-radius:50%;
-  animation:spin .8s linear infinite;}
-.exp-msg{color:#e9dcbb;font-family:'Cinzel',serif;font-size:14px;letter-spacing:.1em;}
-.exp-sub{color:#9a7634;font-family:'IM Fell English',serif;font-style:italic;font-size:12px;}
-@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
@@ -123,7 +112,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
   <button class="btn" onclick="fit()">⊡ Tutto</button>
   <button class="btn on" id="bn" onclick="toggleNames()">Nomi</button>
   <button class="btn" id="expbtn" onclick="exportJPEG()">↓ JPEG A3</button>
-  <span id="savestat" style="color:#9a7634;font-size:10px;font-style:italic;margin-left:6px;"></span>
 </div>
 <div id="stage"><svg id="art" xmlns="http://www.w3.org/2000/svg"></svg></div>
 <div id="panel">
@@ -145,11 +133,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;heigh
 </div>
 <div id="tip"></div>
 <div class="hint">Trascina i nodi per spostarli · ＋ accanto al nome per aggiungere · zoom-in per vedere più nomi</div>
-<div id="exp-overlay">
-  <div class="exp-spinner"></div>
-  <div class="exp-msg">Generazione JPEG in corso…</div>
-  <div class="exp-sub" id="exp-step">Preparazione albero</div>
-</div>
 
 <script>
 // ── DATA ─────────────────────────────────────────────────────────────────
@@ -217,14 +200,15 @@ const ROOT={id:"0",name:"Girolamo Giustiniani",year:"1889–1979",spouse:"Giulia
 
 // ── CONFIG ─────────────────────────────────────────────────────────────────
 const D2R=Math.PI/180;
-const TRUNK_H=250;
+const TRUNK_H=260;
+// Tidy tree config: each leaf gets a guaranteed horizontal slot
+const LEAF_W=140;        // minimum horizontal pixels per leaf
+const LEVEL_H=240;       // vertical spacing between generations
 const TH={0:14,1:8,2:4.8,3:2.8,4:1.7};
 const BC={'1':'#8b4018','2':'#3d6a36','3':'#1c4a72','4':'#6a3472','5':'#806010','6':'#841818','7':'#186056','8':'#4a3c18'};
-const PAD=260;
-const MINA=6*D2R, MAXA=174*D2R;  // fan angular span
-const MIN_ARC=90;                 // minimum arc-distance (px) between adjacent leaf nodes
+const PAD=220;
 let _OX=0,_OY=0,_W=0,_H=0;
-const TX=x=>x+_OX, TY=y=>y+_OY;
+const TX=x=>x+_OX,TY=y=>y+_OY;
 
 // ── SEEDED RANDOM ──────────────────────────────────────────────────────────
 let _s=20220409;
@@ -234,56 +218,11 @@ const srnd=()=>rnd()*2-1;
 // ── TREE HELPERS ───────────────────────────────────────────────────────────
 function findNode(n,id){if(n.id===id)return n;if(!n.children)return null;for(const c of n.children){const f=findNode(c,id);if(f)return f;}return null;}
 function lc(n){return(!n.children||!n.children.length)?1:n.children.reduce((s,c)=>s+lc(c),0);}
+function subWidth(n){if(!n.children||!n.children.length)return LEAF_W;return n.children.reduce((s,c)=>s+subWidth(c),0);}
 
 // ── PERSISTENCE ────────────────────────────────────────────────────────────
 const LS_KEY='giusti-v2';
-
-// ── GOOGLE SHEETS INTEGRATION ──────────────────────────────────────────────
-// Paste the Apps Script web app URL here after deploying (see setup instructions)
-const SCRIPT_URL='https://script.google.com/macros/s/AKfycbww4SDkdlOHd1Rqy8uSjXnqRBnaD69EZWteGAKrDURJWr8Tu9G7HOx-gzqeUaquXTronA/exec';
-
-// Load nodes from Google Sheets via JSONP (works cross-origin without CORS issues)
-function loadFromSheet(){
-  return new Promise(resolve=>{
-    if(!SCRIPT_URL){ loadAdditions(); resolve(); return; }
-    const cbName='_gsLoad'+Date.now();
-    let settled=false;
-    const settle=()=>{ if(!settled){ settled=true; resolve(); }};
-    const timer=setTimeout(()=>{ console.warn('Sheet timeout — using localStorage'); loadAdditions(); settle(); },8000);
-    window[cbName]=(nodes)=>{
-      clearTimeout(timer);
-      if(script.parentNode)document.head.removeChild(script);
-      delete window[cbName];
-      if(!Array.isArray(nodes)){ loadAdditions(); settle(); return; }
-      nodes.forEach(({aid,pid,name,year})=>{
-        const p=findNode(ROOT,pid);
-        if(!p)return;
-        if(!p.children)p.children=[];
-        if(!p.children.find(c=>c.id===aid))
-          p.children.push({id:aid,name,year,_added:true});
-      });
-      // Sync back to localStorage cache
-      saveAdditions();
-      updateSaveStatus(nodes.length);
-      settle();
-    };
-    const script=document.createElement('script');
-    script.onerror=()=>{ clearTimeout(timer); loadAdditions(); settle(); };
-    script.src=`${SCRIPT_URL}?callback=${cbName}&t=${Date.now()}`;
-    document.head.appendChild(script);
-  });
-}
-
-// Save a node to Google Sheets + localStorage (fire-and-forget for sheet)
-function saveToSheet(pid,name,year,aid){
-  saveAdditions(); // always persist to localStorage first (instant, offline-safe)
-  if(!SCRIPT_URL)return;
-  fetch(SCRIPT_URL,{
-    method:'POST',
-    redirect:'follow',
-    body:JSON.stringify({action:'add',aid,pid,name,year})
-  }).catch(e=>console.warn('Sheet save failed:',e));
-}
+function loadAdditions(){
   try{
     const saved=JSON.parse(localStorage.getItem(LS_KEY)||'[]');
     saved.forEach(({pid,name,year,aid})=>{
@@ -306,111 +245,47 @@ function saveAdditions(){
   }
   col(ROOT);
   localStorage.setItem(LS_KEY,JSON.stringify(list));
-  updateSaveStatus(list.length);
-}
-function updateSaveStatus(n){
-  const el=document.getElementById('savestat');
-  if(!el)return;
-  if(n>0)el.textContent=`${n} ${n===1?'nodo':'nodi'} salvato${n===1?'':'i'} (browser locale)`;
-  else el.textContent='salvataggio locale attivo';
 }
 
-// ── BACKUP / RESTORE ───────────────────────────────────────────────────────
-function exportBackup(){
-  const data=localStorage.getItem(LS_KEY)||'[]';
-  const list=JSON.parse(data);
-  if(!list.length){alert('Nessun nodo aggiunto da esportare.');return;}
-  const blob=new Blob([JSON.stringify(list,null,2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`Giustiniani-nodi-aggiunti-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-}
-function importBackup(event){
-  const f=event.target.files[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{
-    try{
-      const list=JSON.parse(r.result);
-      if(!Array.isArray(list))throw new Error('formato non valido');
-      const existing=JSON.parse(localStorage.getItem(LS_KEY)||'[]');
-      // Merge by aid (unique id)
-      const merged=[...existing];
-      list.forEach(it=>{
-        if(!merged.find(m=>m.aid===it.aid))merged.push(it);
-      });
-      localStorage.setItem(LS_KEY,JSON.stringify(merged));
-      // Reload tree to reflect imported nodes
-      // First, clean ROOT of any _added nodes to avoid duplicates
-      function clean(n){if(!n.children)return;n.children=n.children.filter(c=>!c._added);n.children.forEach(clean);}
-      clean(ROOT);
-      loadAdditions();
-      runLayout();build();buildPanel();
-      alert(`Importati ${list.length} nodi. Totale: ${merged.length}.`);
-    }catch(e){alert('Errore: file JSON non valido.');}
-    event.target.value='';
-  };
-  r.readAsText(f);
-}
-
-// ── LAYOUT: Radial Cluster ─────────────────────────────────────────────────
-// All leaves get equal angular slots in [MINA, MAXA].
-// Internal nodes are centered over their subtree's leaf slots.
-// Outer radius is computed so adjacent leaves are always ≥ MIN_ARC px apart.
-// → Guarantees no label overlap anywhere in the tree.
+// ── LAYOUT ─────────────────────────────────────────────────────────────────
+// Tidy tree (Reingold-Tilford style): each leaf gets a guaranteed horizontal slot.
+// Tree grows UPWARD from trunk. ROOT (crown) at (0,0), children at y = -LEVEL_H.
 const AN=[],AE=[];
-
-function countLeaves(n){
-  return(!n.children||!n.children.length)?1:n.children.reduce((s,c)=>s+countLeaves(c),0);
+function layoutTidy(node,cx,cy,gen,parent){
+  node.x=cx;node.y=cy;node.gen=gen;node.parent=parent;
+  if(parent){
+    const dx=cx-parent.x, dy=parent.y-cy;  // dy>0 means child is above parent
+    node.dir=Math.atan2(dy,dx);
+  } else { node.dir=Math.PI/2; }
+  AN.push(node);
+  const ch=node.children;if(!ch||!ch.length)return;
+  const totalW=subWidth(node);
+  let cursor=cx-totalW/2;
+  ch.forEach(c=>{
+    const cw=subWidth(c);
+    const ccx=cursor+cw/2;
+    const ccy=cy-LEVEL_H;
+    cursor+=cw;
+    c.branch=gen===0?c.id:node.branch;
+    AE.push({p:node,c,gen,br:c.branch,cA:Math.PI/2});
+    layoutTidy(c,ccx,ccy,gen+1,node);
+  });
 }
-
 function runLayout(){
-  _s=20220409; AN.length=0; AE.length=0;
-  const spread=MAXA-MINA;
-  const totalLeaves=countLeaves(ROOT);
-  // Ensure arc between adjacent leaves ≥ MIN_ARC px
-  const OR=Math.max(2000, MIN_ARC*totalLeaves/spread);
-  const GR=[0, OR*.28, OR*.54, OR*.78, OR];  // radius per generation
-
-  // Pass 1: number leaves in DFS order
-  let li=0;
-  function numLeaves(n){
-    if(!n.children||!n.children.length){n._li=li++;return;}
-    n.children.forEach(numLeaves);
-  }
-  numLeaves(ROOT);
-
-  // First/last leaf of subtree
-  function fl(n){return(!n.children||!n.children.length)?n:fl(n.children[0]);}
-  function ll(n){return(!n.children||!n.children.length)?n:ll(n.children[n.children.length-1]);}
-
-  // Pass 2: position each node
-  function place(n,gen,parent){
-    n.gen=gen; n.parent=parent;
-    n.branch=(gen===1)?n.id:(parent?.branch||'0');
-    if(!n.children||!n.children.length){
-      n.ang=MINA+(n._li+0.5)*spread/totalLeaves;  // leaf: center of its slot
-    } else {
-      n.children.forEach(c=>place(c,gen+1,n));     // recurse first
-      n.ang=(fl(n).ang+ll(n).ang)/2;               // internal: midpoint of subtree leaves
-    }
-    const r=GR[Math.min(gen,GR.length-1)];
-    n.x=r*Math.cos(n.ang); n.y=-r*Math.sin(n.ang); n.dir=n.ang;
-    AN.push(n);
-    n.children?.forEach(c=>AE.push({p:n,c,gen,br:c.branch,cA:c.ang}));
-  }
-  place(ROOT,0,null);
-
-  // ROOT visual position on trunk (overrides cluster r=0 placement)
-  ROOT.x=0; ROOT.y=TRUNK_H*0.6; ROOT.dir=90*D2R;
-
+  _s=20220409;AN.length=0;AE.length=0;
+  // Layout: ROOT virtually at (0,0) = top of trunk (crown), tree grows upward
+  layoutTidy(ROOT,0,0,0,null);
+  // Position ROOT's visual marker on the trunk, below the crown
+  ROOT.x=0;ROOT.y=TRUNK_H*0.6;ROOT.dir=Math.PI/2;
   let mnX=1e9,mnY=1e9,mxX=-1e9,mxY=-1e9;
   AN.forEach(n=>{
-    mnX=Math.min(mnX,n.x-190); mxX=Math.max(mxX,n.x+190);
-    mnY=Math.min(mnY,n.y-120); mxY=Math.max(mxY,n.y+100);
+    mnX=Math.min(mnX,n.x-90);
+    mxX=Math.max(mxX,n.x+90);
+    mnY=Math.min(mnY,n.y-60);
+    mxY=Math.max(mxY,n.y+70);
   });
   mxY=Math.max(mxY,TRUNK_H+200);
-  _OX=-mnX+PAD; _OY=-mnY+PAD; _W=(mxX-mnX)+PAD*2; _H=(mxY-mnY)+PAD*2;
+  _OX=-mnX+PAD;_OY=-mnY+PAD;_W=(mxX-mnX)+PAD*2;_H=(mxY-mnY)+PAD*2;
 }
 
 // ── SVG HELPERS ────────────────────────────────────────────────────────────
@@ -608,33 +483,19 @@ function build(){
       parentSg.appendChild(eH);parentSg.appendChild(eM);
       if(isRootEdge){rootEdge[node.id]=[eM,eH];}
       else{inEdge[node.id]=[eM,eH];}
-      // ── Leaves attached to branch ──────────────────────────────────────
-      // Random positions along the bezier + a denser cluster near the node
-      // endpoint (x2,y2) where the name label lives
+      // Leaves attached to this branch
       const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy),nx=-dy/len*bend,ny=dx/len*bend;
       const cx1v=x1+dx*.33+nx*.7,cy1v=y1+dy*.33+ny*.7;
       const cx2v=x1+dx*.67+nx,cy2v=y1+dy*.67+ny;
-      if(node.gen<=3){
-        const baseSz=node.gen===1?13:node.gen===2?10:8;
-        const nRand=node.gen===1?4:node.gen===2?3:2;    // random leaves along branch
-        const nClust=node.gen===1?3:node.gen===2?2:1;   // cluster near name
-        // Random leaves: distributed across the branch with jitter
-        for(let i=0;i<nRand;i++){
-          const tBase=0.18+i*(0.55/(nRand-1||1));
-          const t=Math.max(0.08,Math.min(0.72,tBase+(rnd()-.5)*.18));
+      if(node.gen<=2){
+        const nL=node.gen===1?4:2;
+        const sz=node.gen===1?13:10;
+        for(let i=0;i<nL;i++){
+          const t=0.25+i*(0.52/(nL-1||1));
           const pt=bzPt(x1,y1,cx1v,cy1v,cx2v,cy2v,x2,y2,t);
           const tan=bzTan(x1,y1,cx1v,cy1v,cx2v,cy2v,x2,y2,t);
-          const ang=Math.atan2(-tan.dy,tan.dx)+(rnd()-.5)*.18;
-          attachedLeaf(parentSg,pt.x,pt.y,ang,i%2===0?1:-1,baseSz*(0.75+rnd()*.5),.82+rnd()*.14);
-        }
-        // Cluster near node endpoint (the name area) — denser foliage around labels
-        for(let i=0;i<nClust;i++){
-          const t=0.8+rnd()*.16;  // last 20% of the branch curve
-          const pt=bzPt(x1,y1,cx1v,cy1v,cx2v,cy2v,x2,y2,t);
-          const tan=bzTan(x1,y1,cx1v,cy1v,cx2v,cy2v,x2,y2,t);
-          const ang=Math.atan2(-tan.dy,tan.dx)+(rnd()-.5)*.35;
-          const side=rnd()>.5?1:-1;
-          attachedLeaf(parentSg,pt.x,pt.y,ang,side,baseSz*(0.6+rnd()*.42),.7+rnd()*.22);
+          const ang=Math.atan2(-tan.dy,tan.dx);
+          attachedLeaf(parentSg,pt.x,pt.y,ang,i%2===0?1:-1,sz*(0.85+rnd()*.3),.86);
         }
       }
     }
@@ -658,40 +519,36 @@ function build(){
         tipLeaves(sg,x,y,node.dir,9);
     }
 
-    // ── Labels: horizontal, placed L/R based on which half of the tree ─────
-    // Per-gen base font sizes: smaller at deeper generations to fit angular spacing
-    const fs=isFiglio?14:node.gen===2?11.5:node.gen===3?10:8.5;
-    const nr=isFiglio?12:node.gen===2?6:node.gen===3?4.5:3.5;
+    // ── Labels: horizontal, centered BELOW each node ───────────────────────
+    // With tidy layout, each node has guaranteed horizontal space (LEAF_W),
+    // so labels never overlap with siblings.
+    const fs=isFiglio?14:node.gen===2?12.5:11;
+    const nr=isFiglio?12:node.gen===2?6:4.5;
     if(showNames && !isCapo){
-      const goRight=node.x>=0;
-      const lx=goRight?x+(nr+10):x-(nr+10);
-      const anch=goRight?'start':'end';
+      const yOff=nr+12;  // distance from node center down to first text baseline
       const lbl=E('g');
-      const baseNameY=y+fs*0.38;
-      const tName=E('text',{x:lx,y:baseNameY,'text-anchor':anch,'font-size':fs,
+      const tName=E('text',{x,y:y+yOff,'text-anchor':'middle','font-size':fs,
         style:`font-family:'IM Fell English',serif;paint-order:stroke fill;stroke:#ede4c6;stroke-width:3.6px;fill:#2a1d0e;`},
         node.name+(node.sub?` ${node.sub}`:''));
       lbl.appendChild(tName);
       textEls.push({el:tName,baseFs:fs,gen:node.gen});
       if(node.year){
-        const yearFs=Math.max(7,fs*.78);
-        // Year baseline is dynamically repositioned in applyVP based on name's effective font size
-        const tYear=E('text',{x:lx,y:baseNameY+fs*1.08,'text-anchor':anch,'font-size':yearFs.toFixed(1),
+        const yearFs=(fs*.78);
+        const tYear=E('text',{x,y:y+yOff+fs*1.05,'text-anchor':'middle','font-size':yearFs.toFixed(1),
           style:`font-family:'IM Fell English',serif;font-style:italic;paint-order:stroke fill;stroke:#ede4c6;stroke-width:3px;fill:#6a4a20;`},
           node.year);
         lbl.appendChild(tYear);
-        // Note: nameEl = pointer to name text; baseNameY = y of name baseline
-        textEls.push({el:tYear,baseFs:yearFs,gen:node.gen,isYear:true,nameEl:tName,baseNameY});
+        textEls.push({el:tYear,baseFs:yearFs,gen:node.gen});
       }
       sg.appendChild(lbl);
     }
 
-    // ── Plus button: positioned on the label side, away from the node ─────
+    // ── Plus button: fixed offset to the right of node ──────────────────────
     if(!isCapo){
       const plusG=E('g',{class:'plus-g'});
-      const plx=x+(node.x>=0?nr+28:-(nr+28));
-      plusG.appendChild(E('circle',{cx:plx,cy:y-12,r:8,fill:'#1e3a10',stroke:'#5a8a28','stroke-width':1}));
-      plusG.appendChild(E('text',{x:plx,y:y-8,'text-anchor':'middle',style:'font-size:12px;fill:#a8d878;font-family:monospace;font-weight:bold;'},'＋'));
+      const plx=x+nr+16, ply=y-nr-2;
+      plusG.appendChild(E('circle',{cx:plx,cy:ply,r:8,fill:'#1e3a10',stroke:'#5a8a28','stroke-width':1}));
+      plusG.appendChild(E('text',{x:plx,y:ply+4,'text-anchor':'middle',style:'font-size:12px;fill:#a8d878;font-family:monospace;font-weight:bold;'},'＋'));
       plusG.addEventListener('click',e=>{e.stopPropagation();showAddForm(node);});
       sg.appendChild(plusG);
     }
@@ -806,11 +663,10 @@ function confirmAdd(){
   const year=document.getElementById('ay').value.trim();
   if(!name){document.getElementById('aerr').style.display='block';return;}
   if(!addTarget.children)addTarget.children=[];
-  const aid=addTarget.id+'-x'+Date.now();
-  addTarget.children.push({id:aid,name,year,_added:true});
+  addTarget.children.push({id:addTarget.id+'-x'+Date.now(),name,year,_added:true});
+  saveAdditions();
   cancelAdd();
   runLayout();build();buildPanel();
-  saveToSheet(addTarget.id,name,year,aid); // saves to Sheet + localStorage
 }
 document.getElementById('an').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('ay').focus();});
 document.getElementById('ay').addEventListener('keydown',e=>{if(e.key==='Enter')confirmAdd();});
@@ -837,28 +693,12 @@ function applyVP(){
   art.style.transform=`translate3d(${px}px,${py}px,0) scale(${sc})`;
   document.getElementById('zl').textContent=`${Math.round(sc*100)}%`;
   // Scale labels to stay ≥ MIN_LABEL_PX on screen, AND hide deeper gens at low zoom
-  // Two-pass: first names (so we know their scaled font), then years repositioned below
-  textEls.forEach(t=>{
-    const {el,baseFs,gen,isYear}=t;
+  textEls.forEach(({el,baseFs,gen})=>{
     if(!genVisible(gen)){el.style.display='none';return;}
     el.style.display='';
-    if(isYear)return; // pass 2 handles years
     const efs=Math.max(baseFs, MIN_LABEL_PX/sc);
     el.setAttribute('font-size',efs.toFixed(1));
     const sw=(3.2/sc).toFixed(2);
-    const cur=el.getAttribute('style')||'';
-    el.setAttribute('style',cur.replace(/stroke-width:[^;]+/,`stroke-width:${sw}px`));
-  });
-  textEls.forEach(t=>{
-    if(!t.isYear)return;
-    const {el,baseFs,gen,nameEl,baseNameY}=t;
-    if(!genVisible(gen))return; // already hidden in pass 1
-    const efs=Math.max(baseFs, (MIN_LABEL_PX-2)/sc);  // year slightly smaller min
-    el.setAttribute('font-size',efs.toFixed(1));
-    // Reposition year baseline = name baseline + name's actual font size * 1.05
-    const nameEfs=parseFloat(nameEl.getAttribute('font-size'))||baseFs;
-    el.setAttribute('y', (baseNameY + nameEfs*1.05).toFixed(1));
-    const sw=(2.8/sc).toFixed(2);
     const cur=el.getAttribute('style')||'';
     el.setAttribute('style',cur.replace(/stroke-width:[^;]+/,`stroke-width:${sw}px`));
   });
@@ -916,94 +756,81 @@ function zOut(){sc=Math.max(.05,sc*.833);go();}
 function fit(){const vw=stage.clientWidth,vh=stage.clientHeight-44;sc=Math.min(vw/_W,vh/_H)*.9;px=(stage.clientWidth-_W*sc)/2;py=(stage.clientHeight-_H*sc)/2;go();}
 
 // ── JPEG EXPORT ───────────────────────────────────────────────────────────
-function setExpStep(msg){const el=document.getElementById('exp-step');if(el)el.textContent=msg;}
 function exportJPEG(){
   const btn=document.getElementById('expbtn');
-  const overlay=document.getElementById('exp-overlay');
-  btn.textContent='↓ JPEG A3';btn.disabled=true;
-  overlay.classList.add('active');
-  setExpStep('Preparazione etichette…');
+  btn.textContent='…';btn.disabled=true;
+  const svgEl=document.getElementById('art');
 
-  // Defer to let the browser render the overlay before starting heavy work
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const svgEl=document.getElementById('art');
-
-    // ── Snapshot labels → force all visible at base size ──────────────────
-    setExpStep('Serializzazione SVG…');
-    const snapshot=textEls.map(t=>({
-      el:t.el,baseFs:t.baseFs,
-      fs:t.el.getAttribute('font-size'),
-      display:t.el.style.display,
-      style:t.el.getAttribute('style')
-    }));
-    textEls.forEach(({el,baseFs})=>{
-      el.style.display='';
-      el.setAttribute('font-size',baseFs);
-      const cur=el.getAttribute('style')||'';
-      el.setAttribute('style',cur.replace(/stroke-width:[^;]+/,`stroke-width:${baseFs>=13?'3.6':'3'}px`));
-    });
-
-    // Inline serif font fallback
-    const styleEl=document.createElement('style');
-    styleEl.textContent=`text{font-family:Georgia,"Times New Roman",serif;}`;
-    svgEl.insertBefore(styleEl,svgEl.firstChild);
-    const svgStr=new XMLSerializer().serializeToString(svgEl);
-    svgEl.removeChild(styleEl);
-
-    // Restore labels
-    snapshot.forEach(s=>{
-      if(s.fs!==null)s.el.setAttribute('font-size',s.fs);
-      s.el.style.display=s.display;
-      if(s.style!==null)s.el.setAttribute('style',s.style);
-    });
-
-    // ── A3 landscape at 300 DPI = 4961 × 3508 px ─────────────────────────
-    setExpStep('Creazione canvas A3 (300 dpi)…');
-    const treeAspect=_W/_H;
-    const outW=treeAspect>=1?4961:3508;
-    const outH=treeAspect>=1?3508:4961;
-    const canvas=document.createElement('canvas');
-    canvas.width=outW;canvas.height=outH;
-    const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#e8d8b2';ctx.fillRect(0,0,outW,outH);
-    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-
-    const margin=120;
-    const fitScale=Math.min((outW-margin*2)/_W,(outH-margin*2)/_H);
-    const drawW=_W*fitScale,drawH=_H*fitScale;
-    const offX=(outW-drawW)/2,offY=(outH-drawH)/2;
-
-    const blobSvg=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
-    const url=URL.createObjectURL(blobSvg);
-    const img=new Image();
-
-    const done=(ok)=>{
-      URL.revokeObjectURL(url);
-      overlay.classList.remove('active');
-      btn.textContent='↓ JPEG A3';btn.disabled=false;
-      if(!ok)alert('Errore durante l\'esportazione. Riprova.');
-    };
-
-    img.onload=()=>{
-      setExpStep('Rendering su canvas… (può richiedere 20-30 sec)');
-      // Defer again so the step message renders
-      requestAnimationFrame(()=>{
-        ctx.drawImage(img,offX,offY,drawW,drawH);
-        setExpStep('Compressione JPEG…');
-        requestAnimationFrame(()=>{
-          canvas.toBlob(b=>{
-            const a=document.createElement('a');
-            a.href=URL.createObjectURL(b);
-            a.download=`Giustiniani-Arbor-A3-${new Date().getFullYear()}.jpg`;
-            a.click();
-            done(true);
-          },'image/jpeg',.92);
-        });
-      });
-    };
-    img.onerror=()=>done(false);
-    img.src=url;
+  // ── 1. Snapshot current label state, force ALL labels visible at base size ──
+  const snapshot=textEls.map(t=>({
+    el:t.el, baseFs:t.baseFs,
+    fs:t.el.getAttribute('font-size'),
+    display:t.el.style.display,
+    style:t.el.getAttribute('style')
   }));
+  textEls.forEach(({el,baseFs})=>{
+    el.style.display='';
+    el.setAttribute('font-size',baseFs);
+    const cur=el.getAttribute('style')||'';
+    // Use base stroke-width for clean export halo
+    el.setAttribute('style',cur.replace(/stroke-width:[^;]+/,`stroke-width:${baseFs>=13?'3.6':'3'}px`));
+  });
+
+  // Inline serif font fallback (Google Fonts won't load inside canvas)
+  const styleEl=document.createElement('style');
+  styleEl.textContent=`text{font-family:Georgia,"Times New Roman",serif;}`;
+  svgEl.insertBefore(styleEl,svgEl.firstChild);
+
+  const svgStr=new XMLSerializer().serializeToString(svgEl);
+
+  // Clean up
+  svgEl.removeChild(styleEl);
+  snapshot.forEach(s=>{
+    if(s.fs!==null)s.el.setAttribute('font-size',s.fs);
+    s.el.style.display=s.display;
+    if(s.style!==null)s.el.setAttribute('style',s.style);
+  });
+
+  // ── 2. A3 landscape at 300 DPI = 4961 × 3508 px ──
+  // (A3 = 297 × 420 mm; 420mm ÷ 25.4 × 300 = 4961px; 297mm ÷ 25.4 × 300 = 3508px)
+  const treeAspect=_W/_H;
+  const useLandscape=treeAspect>=1;
+  const outW=useLandscape?4961:3508;
+  const outH=useLandscape?3508:4961;
+
+  const canvas=document.createElement('canvas');
+  canvas.width=outW;canvas.height=outH;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#e8d8b2';ctx.fillRect(0,0,outW,outH);
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+
+  // Fit tree into canvas with margin, centered
+  const margin=120;
+  const fitScale=Math.min((outW-margin*2)/_W,(outH-margin*2)/_H);
+  const drawW=_W*fitScale,drawH=_H*fitScale;
+  const offX=(outW-drawW)/2,offY=(outH-drawH)/2;
+
+  const blob=new Blob([svgStr],{type:'image/svg+xml;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const img=new Image();
+  img.onload=()=>{
+    ctx.drawImage(img,offX,offY,drawW,drawH);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(b=>{
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(b);
+      a.download=`Giustiniani-Arbor-A3-${new Date().getFullYear()}.jpg`;
+      a.click();
+      btn.textContent='↓ JPEG A3';btn.disabled=false;
+    },'image/jpeg',.92);
+  };
+  img.onerror=()=>{
+    URL.revokeObjectURL(url);
+    btn.textContent='↓ JPEG A3';btn.disabled=false;
+    alert('Errore export — riprova.');
+  };
+  img.src=url;
 }
 
 // ── GRAIN ─────────────────────────────────────────────────────────────────
@@ -1025,11 +852,10 @@ function checkPwd(){
 }
 document.getElementById('gpwd').addEventListener('keydown',e=>{if(e.key==='Enter')checkPwd();});
 
-async function initTree(){
-  await loadFromSheet(); // loads from Sheet if configured, falls back to localStorage
-  runLayout();build();buildPanel();
-  setTimeout(fit,80);
-}
+function initTree(){runLayout();build();buildPanel();setTimeout(fit,80);}
+
+// Load saved additions BEFORE layout
+loadAdditions();
 
 if(sessionStorage.getItem('auth')==='ok'){
   document.getElementById('gate').remove();
